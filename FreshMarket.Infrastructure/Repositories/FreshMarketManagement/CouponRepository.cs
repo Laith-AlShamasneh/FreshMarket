@@ -80,6 +80,5 @@ public class CouponRepository(
 
         coupon.UsedCount++;
         _context.Coupons.Update(coupon);
-        await _context.SaveChangesAsync(ct);
     }
 }

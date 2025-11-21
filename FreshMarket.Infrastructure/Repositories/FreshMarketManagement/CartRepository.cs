@@ -47,7 +47,6 @@ public class CartRepository(
             };
 
             await _context.Carts.AddAsync(cart, ct);
-            await _context.SaveChangesAsync(ct);
         }
 
         return cart;

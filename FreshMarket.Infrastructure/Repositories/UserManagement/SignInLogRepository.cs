@@ -37,7 +37,6 @@ public class SignInLogRepository(
             async () =>
             {
                 await _context.SignInLogs.AddAsync(log, ct);
-                await _context.SaveChangesAsync(ct);
             },
             logger,
             "Log SignIn Attempt",

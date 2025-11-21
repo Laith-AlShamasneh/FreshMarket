@@ -28,7 +28,6 @@ public class UserRepository(
                 {
                     user.LastLoginAt = DateTime.UtcNow;
                     _context.Users.Update(user);
-                    await _context.SaveChangesAsync(ct);
                 }
             },
             logger,

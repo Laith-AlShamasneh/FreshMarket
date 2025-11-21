@@ -52,7 +52,6 @@ public class InventoryRepository(
 
         inventory.ReservedQuantity += quantity;
         _context.Inventories.Update(inventory);
-        await _context.SaveChangesAsync(ct);
     }
 
     public async Task ReleaseStockAsync(long productVariantId, int quantity, CancellationToken ct = default)
@@ -67,7 +66,6 @@ public class InventoryRepository(
 
         inventory.ReservedQuantity = Math.Max(0, inventory.ReservedQuantity - quantity);
         _context.Inventories.Update(inventory);
-        await _context.SaveChangesAsync(ct);
     }
 
     public async Task CommitStockAsync(long productVariantId, int quantity, CancellationToken ct = default)
@@ -83,6 +81,5 @@ public class InventoryRepository(
         inventory.Quantity -= quantity;
         inventory.ReservedQuantity = Math.Max(0, inventory.ReservedQuantity - quantity);
         _context.Inventories.Update(inventory);
-        await _context.SaveChangesAsync(ct);
     }
 }
