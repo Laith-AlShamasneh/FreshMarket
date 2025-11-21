@@ -20,5 +20,5 @@ public class SignInLog
     public bool IsSuccessful { get; set; }
 
     [MaxLength(500)]
-    public LoginFailureReason? FailureReason { get; set; }  // "InvalidCredentials", "EmailNotConfirmed", etc.
+    public LoginFailureReason? FailureReason { get; set; }
 }

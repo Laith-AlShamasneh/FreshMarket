@@ -5,10 +5,8 @@
 /// </summary>
 public class Base
 {
-    public long CreatedBy { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;  // Add default
-    public long? UpdatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
-    public bool IsActive { get; set; } = true;  // Add default
-    public bool IsDeleted { get; set; } = false;  // Add default (soft delete)
+    public bool IsActive { get; set; } = true;
+    public bool IsDeleted { get; set; } = false;
 }

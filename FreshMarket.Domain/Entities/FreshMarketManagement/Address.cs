@@ -18,13 +18,6 @@ public class Address : Base
     public int CityId { get; set; }
     public City City { get; set; } = null!;
 
-    [ForeignKey(nameof(Country))]
-    public int CountryId { get; set; }
-    public Country Country { get; set; } = null!;
-
-    [MaxLength(200)]
-    public string? Label { get; set; }  // "Home", "Work", etc.
-
     [Required, MaxLength(500)]
     public string Line1 { get; set; } = null!;
 
@@ -34,15 +27,8 @@ public class Address : Base
     [MaxLength(50)]
     public string? PostalCode { get; set; }
 
-    [MaxLength(100)]
-    public string? ContactName { get; set; }
-
     [MaxLength(50)]
-    public string Phone { get; set; } = null!;  // Make required
+    public string Phone { get; set; } = null!; 
 
-    public bool IsDefaultShipping { get; set; } = false;
-    public bool IsDefaultBilling { get; set; } = false;
-
-    [MaxLength(500)]
-    public string? DeliveryInstructions { get; set; }
+    public bool IsDefault { get; set; } = true;
 }

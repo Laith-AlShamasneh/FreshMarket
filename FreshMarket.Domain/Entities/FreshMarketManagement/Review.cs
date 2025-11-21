@@ -31,5 +31,5 @@ public class Review : Base
     public long? ApprovedBy { get; set; }
     public DateTime? ApprovedAt { get; set; }
 
-    public bool IsVerifiedPurchase { get; set; } = false;  // Did they buy it?
+    public bool IsVerifiedPurchase { get; set; } = false;
 }

@@ -19,19 +19,5 @@ public class Country : Base
     [Required, MaxLength(200)]
     public string NameAr { get; set; } = null!;
 
-    [MaxLength(3)]
-    public string? Iso2 { get; set; } 
-
-    [MaxLength(20)]
-    public string? CallingCode { get; set; } 
-
-    [MaxLength(200)]
-    public string? TimeZone { get; set; }
-
-    [MaxLength(200)]
-    public string? Slug { get; set; }
-
-    public string? Metadata { get; set; }
-
     public ICollection<City> Cities { get; set; } = [];
 }
