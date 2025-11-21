@@ -63,6 +63,7 @@ public class FreshMarketDbContext(DbContextOptions<FreshMarketDbContext> options
     /// </summary>
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        HandleSoftDeletes();
         SetAuditTimestamps();
         return await base.SaveChangesAsync(cancellationToken);
     }
@@ -72,8 +73,31 @@ public class FreshMarketDbContext(DbContextOptions<FreshMarketDbContext> options
     /// </summary>
     public override int SaveChanges()
     {
+        HandleSoftDeletes();
         SetAuditTimestamps();
         return base.SaveChanges();
+    }
+
+    /// <summary>
+    /// Handles soft delete logic: instead of physically deleting records, 
+    /// marks them as deleted by setting IsDeleted = true and UpdatedAt timestamp.
+    /// This preserves data for audit trails and historical records.
+    /// </summary>
+    private void HandleSoftDeletes()
+    {
+        var entries = ChangeTracker.Entries();
+
+        foreach (var entry in entries)
+        {
+            if (entry.Entity is not Base entity) continue;
+
+            if (entry.State == EntityState.Deleted)
+            {
+                entry.State = EntityState.Modified;
+                entity.IsDeleted = true;
+                entity.UpdatedAt = DateTime.UtcNow;
+            }
+        }
     }
 
     /// <summary>
