@@ -87,3 +87,29 @@ public enum PaymentStatus
     PartiallyRefunded = 5,
     Cancelled = 6
 }
+
+/// <summary>
+/// Represents the available payment methods for customer orders
+/// </summary>
+public enum PaymentMethodType
+{
+    CreditCard = 1,
+    DebitCard = 2,
+    CashOnDelivery = 3,
+    DigitalWallet = 4,
+    BankTransfer = 5,
+    Check = 6
+}
+
+/// <summary>
+/// Represents the available shipping methods for order delivery
+/// </summary>
+public enum ShippingMethodType
+{
+    Standard = 1,
+    Express = 2,
+    Overnight = 3,
+    SameDay = 4,
+    InStorePickup = 5,
+    Courier = 6
+}

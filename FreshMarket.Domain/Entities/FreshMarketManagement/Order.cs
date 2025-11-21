@@ -1,6 +1,6 @@
-﻿using FreshMarket.Domain.Entities.LookupManagement;
-using FreshMarket.Domain.Entities.SharedManagement;
+﻿using FreshMarket.Domain.Entities.SharedManagement;
 using FreshMarket.Domain.Entities.UserManagement;
+using FreshMarket.Shared.Common;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -14,7 +14,7 @@ public class Order : Base
     public string OrderNumber { get; set; } = null!;
 
     [ForeignKey(nameof(User))]
-    public long? UserId { get; set; }  // Nullable for guest orders
+    public long? UserId { get; set; }
     public User? User { get; set; }
 
     // Addresses
@@ -42,15 +42,6 @@ public class Order : Base
     [Column(TypeName = "decimal(6,2)")]
     public decimal GrandTotal { get; set; } = 0m;
 
-    // Status
-    [ForeignKey(nameof(OrderStatus))]
-    public int OrderStatusId { get; set; }
-    public OrderStatus OrderStatus { get; set; } = null!;
-
-    [ForeignKey(nameof(PaymentStatus))]
-    public int PaymentStatusId { get; set; }
-    public PaymentStatus PaymentStatus { get; set; } = null!;
-
     // Coupon
     [ForeignKey(nameof(Coupon))]
     public long? CouponId { get; set; }
@@ -73,7 +64,11 @@ public class Order : Base
     [MaxLength(1000)]
     public string? Notes { get; set; }
 
+    public OrderStatus OrderStatus { get; set; } = OrderStatus.Pending;
+    public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
+    public PaymentMethodType PaymentMethod { get; set; } = PaymentMethodType.CreditCard;
+    public ShippingMethodType ShippingMethod { get; set; } = ShippingMethodType.Standard;
+
     // Navigation
     public ICollection<OrderItem> OrderItems { get; set; } = [];
-    public ICollection<PaymentTransaction> PaymentTransactions { get; set; } = [];
 }
