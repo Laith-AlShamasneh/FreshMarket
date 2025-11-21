@@ -37,22 +37,19 @@ public class Repository<T>(FreshMarketDbContext context, ILogger<Repository<T>> 
         return await ExecutionHelper.ExecuteAsync(
             () => query.ToListAsync(ct),
             logger,
-            $"List {typeof(T).Name} with specification",
-            spec
+            $"List {typeof(T).Name} with specification"
         );
     }
 
     public async Task<T?> FirstOrDefaultAsync(ISpecification<T> spec, CancellationToken ct = default)
     {
         Guard.AgainstNull(spec, nameof(spec));
-
         var query = SpecificationEvaluator<T>.GetQuery(_set.AsQueryable(), spec);
 
         return await ExecutionHelper.ExecuteAsync(
             () => query.FirstOrDefaultAsync(ct),
             logger,
-            $"First {typeof(T).Name} with specification",
-            spec
+            $"First {typeof(T).Name} with specification"
         );
     }
 
@@ -66,8 +63,7 @@ public class Repository<T>(FreshMarketDbContext context, ILogger<Repository<T>> 
                 return entity;
             },
             logger,
-            $"Add {typeof(T).Name}",
-            entity
+            $"Add {typeof(T).Name}"
         );
     }
 
@@ -88,8 +84,7 @@ public class Repository<T>(FreshMarketDbContext context, ILogger<Repository<T>> 
         ExecutionHelper.Execute(
             () => _set.Update(entity),
             logger,
-            $"Update {typeof(T).Name}",
-            entity
+            $"Update {typeof(T).Name}"
         );
     }
 
@@ -99,8 +94,7 @@ public class Repository<T>(FreshMarketDbContext context, ILogger<Repository<T>> 
         ExecutionHelper.Execute(
             () => _set.Remove(entity),
             logger,
-            $"Delete {typeof(T).Name}",
-            entity
+            $"Delete {typeof(T).Name}"
         );
     }
 
@@ -110,8 +104,7 @@ public class Repository<T>(FreshMarketDbContext context, ILogger<Repository<T>> 
         return await ExecutionHelper.ExecuteAsync(
             () => query.CountAsync(ct),
             logger,
-            $"Count {typeof(T).Name}",
-            spec
+            $"Count {typeof(T).Name}"
         );
     }
 }
