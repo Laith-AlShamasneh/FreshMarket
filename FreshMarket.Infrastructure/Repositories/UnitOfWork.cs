@@ -19,12 +19,7 @@ public class UnitOfWork(
     IUserRole userRoleRepository,
     IUnitOfMeasure unitOfMeasureRepository,
     ICountry countryRepository,
-    IPaymentStatus paymentStatusRepository,
     ICity cityRepository,
-    IOrderStatus orderStatusRepository,
-    IPaymentMethodType paymentMethodTypeRepository,
-    IPriceHistory priceHistoryRepository,
-    IShippingMethodType shippingMethodTypeRepository,
     ICurrency currencyRepository,
     ICart cartRepository,
     ICartItem cartItemRepository,
@@ -35,13 +30,10 @@ public class UnitOfWork(
     ICoupon couponRepository,
     IOrderHistory orderHistoryRepository,
     IOrder orderRepository,
-    IPaymentTransaction paymentTransactionRepository,
     IProduct productRepository,
     IProductMedia productMediaRepository,
     IProductVariant productVariantRepository,
-    IReview reviewRepository,
-    IWishlist wishlistRepository,
-    IWishlistItem wishlistItemRepository)
+    IReview reviewRepository)
     : IUnitOfWork
 {
     public IPerson PersonRepository => personRepository;
@@ -51,11 +43,7 @@ public class UnitOfWork(
     public IUserRole UserRoleRepository => userRoleRepository;
     public IUnitOfMeasure UnitOfMeasureRepository => unitOfMeasureRepository;
     public ICountry CountryRepository => countryRepository;
-    public IPaymentStatus PaymentStatusRepository => paymentStatusRepository;
     public ICity CityRepository => cityRepository;
-    public IOrderStatus OrderStatusRepository => orderStatusRepository;
-    public IPaymentMethodType PaymentMethodTypeRepository => paymentMethodTypeRepository;
-    public IShippingMethodType ShippingMethodTypeRepository => shippingMethodTypeRepository;
     public ICurrency CurrencyRepository => currencyRepository;
     public ICart CartRepository => cartRepository;
     public ICartItem CartItemRepository => cartItemRepository;
@@ -66,14 +54,10 @@ public class UnitOfWork(
     public ICoupon CouponRepository => couponRepository;
     public IOrderHistory OrderHistoryRepository => orderHistoryRepository;
     public IOrder OrderRepository => orderRepository;
-    public IPaymentTransaction PaymentTransactionRepository => paymentTransactionRepository;
-    public IPriceHistory PriceHistoryRepository => priceHistoryRepository;
     public IProduct ProductRepository => productRepository;
     public IProductMedia ProductMediaRepository => productMediaRepository;
     public IProductVariant ProductVariantRepository => productVariantRepository;
     public IReview ReviewRepository => reviewRepository;
-    public IWishlist WishlistRepository => wishlistRepository;
-    public IWishlistItem WishlistItemRepository => wishlistItemRepository;
 
     public int SaveChanges()
         => ExecutionHelper.ExecuteAsync(

@@ -79,7 +79,6 @@ public class OrderRepository(
                 .Include(o => o.BillingAddress)
                 .Include(o => o.ShippingAddress)
                 .Include(o => o.Coupon)
-                .Include(o => o.PaymentTransactions)
                 .Include(o => o.OrderStatus)
                 .Include(o => o.PaymentStatus)
                 .Include(o => o.User)
@@ -104,7 +103,6 @@ public class OrderRepository(
                 .Include(o => o.BillingAddress)
                 .Include(o => o.ShippingAddress)
                 .Include(o => o.Coupon)
-                .Include(o => o.PaymentTransactions)
                 .Include(o => o.OrderStatus)
                 .Include(o => o.PaymentStatus)
                 .Include(o => o.User)
@@ -120,7 +118,7 @@ public class OrderRepository(
         return await ExecutionHelper.ExecuteAsync(
             () => _context.Orders
                 .AsNoTracking()
-                .Where(o => o.PaymentStatusId == (int)PaymentStatus.Pending)
+                .Where(o => o.PaymentStatus == PaymentStatus.Pending)
                 .Include(o => o.User)
                 .Include(o => o.PaymentStatus)
                 .OrderBy(o => o.PlacedAt)
@@ -130,21 +128,21 @@ public class OrderRepository(
         );
     }
 
-    public async Task<IReadOnlyList<Order>> GetByStatusAsync(int orderStatusId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<Order>> GetByStatusAsync(OrderStatus orderStatus, CancellationToken ct = default)
     {
-        Guard.AgainstNegativeOrZero(orderStatusId, nameof(orderStatusId));
+        Guard.AgainstNegativeOrZero((long)orderStatus, nameof(orderStatus));
 
         return await ExecutionHelper.ExecuteAsync(
             () => _context.Orders
                 .AsNoTracking()
-                .Where(o => o.OrderStatusId == orderStatusId)
+                .Where(o => o.OrderStatus == orderStatus)
                 .Include(o => o.OrderStatus)
                 .Include(o => o.User)
                 .OrderByDescending(o => o.PlacedAt)
                 .ToListAsync(ct),
             logger,
             "Get Orders by Status",
-            new { OrderStatusId = orderStatusId }
+            new { OrderStatus = orderStatus }
         );
     }
 
@@ -196,8 +194,8 @@ public class OrderRepository(
                 : query.OrderByDescending(o => o.GrandTotal),
 
             "status" => request.SortDirection == SortDirection.Ascending
-                ? query.OrderBy(o => o.OrderStatus.NameEn)
-                : query.OrderByDescending(o => o.OrderStatus.NameEn),
+                ? query.OrderBy(o => o.OrderStatus)
+                : query.OrderByDescending(o => o.OrderStatus),
 
             "ordernumber" => request.SortDirection == SortDirection.Ascending
                 ? query.OrderBy(o => o.OrderNumber)

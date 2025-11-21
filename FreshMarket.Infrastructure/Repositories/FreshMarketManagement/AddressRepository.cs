@@ -23,9 +23,9 @@ public class AddressRepository(
                 .AsNoTracking()
                 .Where(a => a.UserId == userId)
                 .Include(a => a.City)
-                .Include(a => a.Country)
+                .ThenInclude(a => a.Country)
                 .Include(a => a.User)
-                .OrderBy(a => a.IsDefaultBilling ? 0 : a.IsDefaultShipping ? 1 : 2)
+                .OrderBy(a => a.IsDefault ? 0 : a.IsDefault ? 1 : 2)
                 .ThenBy(a => a.AddressId)
                 .ToListAsync(ct),
             logger,
@@ -42,8 +42,8 @@ public class AddressRepository(
             () => _context.Addresses
                 .AsNoTracking()
                 .Include(a => a.City)
-                .Include(a => a.Country)
-                .FirstOrDefaultAsync(a => a.UserId == userId && a.IsDefaultBilling, ct),
+                .ThenInclude(a => a.Country)
+                .FirstOrDefaultAsync(a => a.UserId == userId && a.IsDefault, ct),
             logger,
             "Get Default Billing Address",
             new { UserId = userId }
@@ -58,8 +58,7 @@ public class AddressRepository(
             () => _context.Addresses
                 .AsNoTracking()
                 .Include(a => a.City)
-                .Include(a => a.Country)
-                .FirstOrDefaultAsync(a => a.UserId == userId && a.IsDefaultShipping, ct),
+                .FirstOrDefaultAsync(a => a.UserId == userId && a.IsDefault, ct),
             logger,
             "Get Default Shipping Address",
             new { UserId = userId }
@@ -74,7 +73,6 @@ public class AddressRepository(
             () => _context.Addresses
                 .AsNoTracking()
                 .Include(a => a.City)
-                .Include(a => a.Country)
                 .Include(a => a.User)
                 .FirstOrDefaultAsync(a => a.AddressId == addressId, ct),
             logger,

@@ -1,6 +1,7 @@
 ﻿using FreshMarket.Domain.Entities.FreshMarketManagement;
 using FreshMarket.Domain.Interfaces.Repositories.FreshMarketManagement;
 using FreshMarket.Infrastructure.Data;
+using FreshMarket.Shared.Common;
 using FreshMarket.Shared.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -90,20 +91,18 @@ public class OrderHistoryRepository(
 
     public async Task<OrderHistory> AddStatusChangeAsync(
         long orderId,
-        int? oldStatusId,
-        int newStatusId,
+        OrderStatus oldStatus,
+        OrderStatus newStatus,
         string? notes = null,
         CancellationToken ct = default)
     {
-        Guard.AgainstNegativeOrZero(orderId, nameof(orderId));
-        Guard.AgainstNegativeOrZero(newStatusId, nameof(newStatusId));
         if (notes is not null) Guard.AgainstNullOrWhiteSpace(notes, nameof(notes));
 
         var history = new OrderHistory
         {
             OrderId = orderId,
-            OldStatusId = oldStatusId,
-            NewStatusId = newStatusId,
+            OldStatus = oldStatus,
+            NewStatus = newStatus,
             Notes = notes?.Trim()
         };
 
@@ -116,7 +115,7 @@ public class OrderHistoryRepository(
             },
             logger,
             "Add Order Status Change",
-            new { OrderId = orderId, OldStatusId = oldStatusId, NewStatusId = newStatusId, Notes = notes }
+            new { OrderId = orderId, OldStatus = oldStatus, NewStatus = newStatus, Notes = notes }
         );
     }
 }

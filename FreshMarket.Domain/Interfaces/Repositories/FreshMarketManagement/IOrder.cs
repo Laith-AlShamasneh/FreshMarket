@@ -10,7 +10,7 @@ public interface IOrder : IRepository<Order>
     Task<Order?> GetWithDetailsAsync(long orderId, CancellationToken ct = default);
     Task<Order?> GetWithDetailsBySessionIdAsync(Guid sessionId, CancellationToken ct = default);
     Task<IReadOnlyList<Order>> GetPendingPaymentAsync(CancellationToken ct = default);
-    Task<IReadOnlyList<Order>> GetByStatusAsync(int orderStatusId, CancellationToken ct = default);
+    Task<IReadOnlyList<Order>> GetByStatusAsync(OrderStatus orderStatus, CancellationToken ct = default);
     Task<IPaginatedList<Order>> GetPaginatedByUserIdAsync(long? userId, PaginationRequest request, CancellationToken ct = default);
     Task<IPaginatedList<Order>> GetPaginatedBySessionIdAsync(Guid sessionId, PaginationRequest request, CancellationToken ct = default);
 }

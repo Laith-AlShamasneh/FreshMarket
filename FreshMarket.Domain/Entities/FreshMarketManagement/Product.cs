@@ -53,7 +53,6 @@ public class Product : Base
     public string? SeoDescription { get; set; }
 
     // Navigation
-    public ICollection<PriceHistory> PriceHistories { get; set; } = [];
     public ICollection<ProductMedia> ProductMedia { get; set; } = [];
     public ICollection<ProductVariant> ProductVariants { get; set; } = [];
     public ICollection<Review> Reviews { get; set; } = [];

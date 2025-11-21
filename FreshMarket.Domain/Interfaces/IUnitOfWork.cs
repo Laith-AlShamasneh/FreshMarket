@@ -24,11 +24,7 @@ public interface IUnitOfWork : IAsyncDisposable
     // ──────────────────────────────
     IUnitOfMeasure UnitOfMeasureRepository { get; }
     ICountry CountryRepository { get; }
-    IPaymentStatus PaymentStatusRepository { get; }
     ICity CityRepository { get; }
-    IOrderStatus OrderStatusRepository { get; }
-    IPaymentMethodType PaymentMethodTypeRepository { get; }
-    IShippingMethodType ShippingMethodTypeRepository { get; }
     ICurrency CurrencyRepository { get; }
 
     // ──────────────────────────────
@@ -43,14 +39,10 @@ public interface IUnitOfWork : IAsyncDisposable
     ICoupon CouponRepository { get; }
     IOrderHistory OrderHistoryRepository { get; }
     IOrder OrderRepository { get; }
-    IPaymentTransaction PaymentTransactionRepository { get; }
-    IPriceHistory PriceHistoryRepository { get; }
     IProduct ProductRepository { get; }
     IProductMedia ProductMediaRepository { get; }
     IProductVariant ProductVariantRepository { get; }
     IReview ReviewRepository { get; }
-    IWishlist WishlistRepository { get; }
-    IWishlistItem WishlistItemRepository { get; }
 
     // ──────────────────────────────
     // Persistence & Transaction Control

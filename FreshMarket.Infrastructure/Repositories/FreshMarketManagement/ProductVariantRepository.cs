@@ -157,7 +157,6 @@ public class ProductVariantRepository(
                 .Include(pv => pv.Inventory)
                 .Include(pv => pv.UnitOfMeasure)
                 .Include(pv => pv.Product)
-                .ThenInclude(p => p.PriceHistories)
                 .Where(pv => pv.ProductId == productId && pv.IsActive && pv.Inventory.Quantity > pv.Inventory.ReservedQuantity)
                 .OrderBy(pv => pv.IsDefault ? 0 : 1)
                 .ThenBy(pv => pv.Sku)

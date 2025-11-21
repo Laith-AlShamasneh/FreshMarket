@@ -21,11 +21,7 @@ public class FreshMarketDbContext(DbContextOptions<FreshMarketDbContext> options
     // ──────────────────────────────
     public DbSet<UnitOfMeasure> UnitOfMeasures => Set<UnitOfMeasure>();
     public DbSet<Country> Countries => Set<Country>();
-    public DbSet<PaymentStatus> PaymentStatuses => Set<PaymentStatus>();
     public DbSet<City> Cities => Set<City>();
-    public DbSet<OrderStatus> OrderStatuses => Set<OrderStatus>();
-    public DbSet<PaymentMethodType> PaymentMethodTypes => Set<PaymentMethodType>();
-    public DbSet<ShippingMethodType> ShippingMethodTypes => Set<ShippingMethodType>();
     public DbSet<Currency> Currencies => Set<Currency>();
 
     // ──────────────────────────────
@@ -40,14 +36,10 @@ public class FreshMarketDbContext(DbContextOptions<FreshMarketDbContext> options
     public DbSet<Coupon> Coupons => Set<Coupon>();
     public DbSet<OrderHistory> OrderHistories => Set<OrderHistory>();
     public DbSet<Order> Orders => Set<Order>();
-    public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
-    public DbSet<PriceHistory> PriceHistories => Set<PriceHistory>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductMedia> ProductMedias => Set<ProductMedia>();
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
     public DbSet<Review> Reviews => Set<Review>();
-    public DbSet<Wishlist> Wishlists => Set<Wishlist>();
-    public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

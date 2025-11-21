@@ -34,11 +34,7 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfMeasure, UnitOfMeasureRepository>();
         services.AddScoped<ICountry, CountryRepository>();
-        services.AddScoped<IPaymentStatus, PaymentStatusRepository>();
         services.AddScoped<ICity, CityRepository>();
-        services.AddScoped<IOrderStatus, OrderStatusRepository>();
-        services.AddScoped<IPaymentMethodType, PaymentMethodTypeRepository>();
-        services.AddScoped<IShippingMethodType, ShippingMethodTypeRepository>();
         services.AddScoped<ICurrency, CurrencyRepository>();
 
         services.AddScoped<ICart, CartRepository>();
@@ -50,14 +46,10 @@ public static class DependencyInjection
         services.AddScoped<ICoupon, CouponRepository>();
         services.AddScoped<IOrderHistory, OrderHistoryRepository>();
         services.AddScoped<IOrder, OrderRepository>();
-        services.AddScoped<IPaymentTransaction, PaymentTransactionRepository>();
-        services.AddScoped<IPriceHistory, PriceHistoryRepository>();
         services.AddScoped<IProduct, ProductRepository>();
         services.AddScoped<IProductMedia, ProductMediaRepository>();
         services.AddScoped<IProductVariant, ProductVariantRepository>();
         services.AddScoped<IReview, ReviewRepository>();
-        services.AddScoped<IWishlist, WishlistRepository>();
-        services.AddScoped<IWishlistItem, WishlistItemRepository>();
 
         return services;
     }

@@ -110,7 +110,6 @@ public class ProductRepository(
                 .Include(p => p.ProductMedia)
                 .Include(p => p.Category)
                 .Include(p => p.Reviews.Where(r => r.IsApproved))
-                .Include(p => p.PriceHistories)
                 .FirstOrDefaultAsync(p => p.ProductId == productId && p.IsPublished, ct),
             logger,
             "Get Product with Details",

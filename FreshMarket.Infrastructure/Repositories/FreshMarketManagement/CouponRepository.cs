@@ -62,7 +62,7 @@ public class CouponRepository(
                 .AnyAsync(o =>
                     o.CouponCode == code &&
                     o.UserId == userId &&
-                    o.OrderStatusId == (int)OrderStatus.Delivered,
+                    o.OrderStatus == OrderStatus.Delivered,
                     ct),
             logger,
             "Check Coupon Used by User",
@@ -80,7 +80,7 @@ public class CouponRepository(
                 .AnyAsync(oi =>
                     oi.Order.CouponCode == code &&
                     oi.SessionId == sessionId &&
-                    oi.Order.OrderStatusId == (int)OrderStatus.Delivered,
+                    oi.Order.OrderStatus == OrderStatus.Delivered,
                     ct),
             logger,
             "Check Coupon Used by Session",
