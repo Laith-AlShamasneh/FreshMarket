@@ -5,87 +5,136 @@ using FreshMarket.Domain.Interfaces.Repositories.UserManagement;
 using FreshMarket.Infrastructure.Data;
 using FreshMarket.Infrastructure.Transactions;
 using FreshMarket.Shared.Helpers;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 
 namespace FreshMarket.Infrastructure.Repositories;
 
-public class UnitOfWork(
-    FreshMarketDbContext context,
-    ILogger<UnitOfWork> logger,
-    IPerson personRepository,
-    ISignInLog signInLogRepository,
-    IUser userRepository,
-    IRole roleRepository,
-    IUserRole userRoleRepository,
-    IUnitOfMeasure unitOfMeasureRepository,
-    ICountry countryRepository,
-    ICity cityRepository,
-    ICurrency currencyRepository,
-    ICart cartRepository,
-    ICartItem cartItemRepository,
-    IAddress addressRepository,
-    IOrderItem orderItemRepository,
-    IInventory inventoryRepository,
-    ICategory categoryRepository,
-    ICoupon couponRepository,
-    IOrderHistory orderHistoryRepository,
-    IOrder orderRepository,
-    IProduct productRepository,
-    IProductMedia productMediaRepository,
-    IProductVariant productVariantRepository,
-    IReview reviewRepository)
-    : IUnitOfWork
+public class UnitOfWork : IUnitOfWork
 {
-    public IPerson PersonRepository => personRepository;
-    public ISignInLog SignInLogRepository => signInLogRepository;
-    public IUser UserRepository => userRepository;
-    public IRole RoleRepository => roleRepository;
-    public IUserRole UserRoleRepository => userRoleRepository;
-    public IUnitOfMeasure UnitOfMeasureRepository => unitOfMeasureRepository;
-    public ICountry CountryRepository => countryRepository;
-    public ICity CityRepository => cityRepository;
-    public ICurrency CurrencyRepository => currencyRepository;
-    public ICart CartRepository => cartRepository;
-    public ICartItem CartItemRepository => cartItemRepository;
-    public IAddress AddressRepository => addressRepository;
-    public IOrderItem OrderItemRepository => orderItemRepository;
-    public IInventory InventoryRepository => inventoryRepository;
-    public ICategory CategoryRepository => categoryRepository;
-    public ICoupon CouponRepository => couponRepository;
-    public IOrderHistory OrderHistoryRepository => orderHistoryRepository;
-    public IOrder OrderRepository => orderRepository;
-    public IProduct ProductRepository => productRepository;
-    public IProductMedia ProductMediaRepository => productMediaRepository;
-    public IProductVariant ProductVariantRepository => productVariantRepository;
-    public IReview ReviewRepository => reviewRepository;
+    private readonly FreshMarketDbContext _context;
+    private readonly ILogger<UnitOfWork> _logger;
+
+    // Repositories (injected)
+    public IPerson PersonRepository { get; }
+    public ISignInLog SignInLogRepository { get; }
+    public IUser UserRepository { get; }
+    public IRole RoleRepository { get; }
+    public IUserRole UserRoleRepository { get; }
+
+    public ICountry CountryRepository { get; }
+    public ICity CityRepository { get; }
+    public ICurrency CurrencyRepository { get; }
+    public IUnitOfMeasure UnitOfMeasureRepository { get; }
+
+    public ICategory CategoryRepository { get; }
+    public IProduct ProductRepository { get; }
+    public IProductVariant ProductVariantRepository { get; }
+    public IProductMedia ProductMediaRepository { get; }
+    public IInventory InventoryRepository { get; }
+
+    public ICart CartRepository { get; }
+    public ICartItem CartItemRepository { get; }
+    public IAddress AddressRepository { get; }
+
+    public IOrder OrderRepository { get; }
+    public IOrderItem OrderItemRepository { get; }
+    public IOrderHistory OrderHistoryRepository { get; }
+
+    public ICoupon CouponRepository { get; }
+    public IReview ReviewRepository { get; }
+
+    public UnitOfWork(
+        FreshMarketDbContext context,
+        ILogger<UnitOfWork> logger,
+        IPerson personRepository,
+        ISignInLog signInLogRepository,
+        IUser userRepository,
+        IRole roleRepository,
+        IUserRole userRoleRepository,
+        IUnitOfMeasure unitOfMeasureRepository,
+        ICountry countryRepository,
+        ICity cityRepository,
+        ICurrency currencyRepository,
+        ICart cartRepository,
+        ICartItem cartItemRepository,
+        IAddress addressRepository,
+        IOrderItem orderItemRepository,
+        IInventory inventoryRepository,
+        ICategory categoryRepository,
+        ICoupon couponRepository,
+        IOrderHistory orderHistoryRepository,
+        IOrder orderRepository,
+        IProduct productRepository,
+        IProductMedia productMediaRepository,
+        IProductVariant productVariantRepository,
+        IReview reviewRepository)
+    {
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+        PersonRepository = personRepository;
+        SignInLogRepository = signInLogRepository;
+        UserRepository = userRepository;
+        RoleRepository = roleRepository;
+        UserRoleRepository = userRoleRepository;
+
+        UnitOfMeasureRepository = unitOfMeasureRepository;
+        CountryRepository = countryRepository;
+        CityRepository = cityRepository;
+        CurrencyRepository = currencyRepository;
+
+        CartRepository = cartRepository;
+        CartItemRepository = cartItemRepository;
+        AddressRepository = addressRepository;
+        OrderItemRepository = orderItemRepository;
+        InventoryRepository = inventoryRepository;
+        CategoryRepository = categoryRepository;
+        CouponRepository = couponRepository;
+        OrderHistoryRepository = orderHistoryRepository;
+        OrderRepository = orderRepository;
+        ProductRepository = productRepository;
+        ProductMediaRepository = productMediaRepository;
+        ProductVariantRepository = productVariantRepository;
+        ReviewRepository = reviewRepository;
+    }
 
     public int SaveChanges()
         => ExecutionHelper.ExecuteAsync(
-            () => Task.FromResult(context.SaveChanges()),
-            logger,
+            () => Task.FromResult(_context.SaveChanges()),
+            _logger,
             "SaveChanges (sync)"
         ).GetAwaiter().GetResult();
 
     public async Task<int> SaveChangesAsync(CancellationToken ct = default)
         => await ExecutionHelper.ExecuteAsync(
-            () => context.SaveChangesAsync(ct),
-            logger,
+            () => _context.SaveChangesAsync(ct),
+            _logger,
             "SaveChanges (async)"
         );
 
+    /// <summary>
+    /// Begins a new EF Core transaction and returns an ITransaction wrapper.
+    /// Use transaction.CommitAsync() to commit, or RollbackAsync() to rollback.
+    /// </summary>
     public async Task<ITransaction> BeginTransactionAsync(CancellationToken ct = default)
-        => await ExecutionHelper.ExecuteAsync(
-            async () =>
-            {
-                var tx = await context.Database.BeginTransactionAsync(ct);
-                return new EfCoreTransaction(tx);
-            },
-            logger,
-            "BeginTransaction"
-        );
+    {
+        var efTx = await _context.Database.BeginTransactionAsync(ct);
+        return new EfCoreTransaction(efTx, _logger);
+    }
 
+    /// <summary>
+    /// Dispose the underlying DbContext when the UnitOfWork is disposed.
+    /// </summary>
     public async ValueTask DisposeAsync()
     {
-        await context.DisposeAsync();
+        try
+        {
+            await _context.DisposeAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error disposing FreshMarketDbContext in UnitOfWork");
+        }
     }
 }
