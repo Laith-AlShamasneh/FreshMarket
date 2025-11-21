@@ -10,56 +10,44 @@ namespace FreshMarket.Domain.Interfaces;
 /// </summary>
 public interface IUnitOfWork : IAsyncDisposable
 {
-    // ──────────────────────────────
-    // User Management Repositories
-    // ──────────────────────────────
+    // ────────────────────────────── User Management ──────────────────────────────
     IPerson PersonRepository { get; }
-    ISignInLog SignInLogRepository { get; }
     IUser UserRepository { get; }
     IRole RoleRepository { get; }
     IUserRole UserRoleRepository { get; }
+    ISignInLog SignInLogRepository { get; }
 
-    // ──────────────────────────────
-    // Lookup Management Repositories
-    // ──────────────────────────────
-    IUnitOfMeasure UnitOfMeasureRepository { get; }
+    // ────────────────────────────── Lookups ──────────────────────────────
     ICountry CountryRepository { get; }
     ICity CityRepository { get; }
     ICurrency CurrencyRepository { get; }
+    IUnitOfMeasure UnitOfMeasureRepository { get; }
 
-    // ──────────────────────────────
-    // FreshMarket Management Repositories
-    // ──────────────────────────────
+    // ────────────────────────────── FreshMarket ──────────────────────────────
+    ICategory CategoryRepository { get; }
+    IProduct ProductRepository { get; }
+    IProductVariant ProductVariantRepository { get; }
+    IProductMedia ProductMediaRepository { get; }
+    IInventory InventoryRepository { get; }
+
     ICart CartRepository { get; }
     ICartItem CartItemRepository { get; }
     IAddress AddressRepository { get; }
-    IOrderItem OrderItemRepository { get; }
-    IInventory InventoryRepository { get; }
-    ICategory CategoryRepository { get; }
-    ICoupon CouponRepository { get; }
-    IOrderHistory OrderHistoryRepository { get; }
+
     IOrder OrderRepository { get; }
-    IProduct ProductRepository { get; }
-    IProductMedia ProductMediaRepository { get; }
-    IProductVariant ProductVariantRepository { get; }
+    IOrderItem OrderItemRepository { get; }
+    IOrderHistory OrderHistoryRepository { get; }
+
+    ICoupon CouponRepository { get; }
     IReview ReviewRepository { get; }
 
-    // ──────────────────────────────
-    // Persistence & Transaction Control
-    // ──────────────────────────────
-
-    /// <summary>
-    /// Commits all changes made in this unit of work to the database.
-    /// </summary>
+    // ────────────────────────────── Persistence ──────────────────────────────
+    /// <summary>Save all changes synchronously</summary>
     int SaveChanges();
 
-    /// <summary>
-    /// Asynchronously commits all changes made in this unit of work.
-    /// </summary>
-    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    /// <summary>Save all changes asynchronously</summary>
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
 
-    /// <summary>
-    /// Begins a new database transaction.
-    /// </summary>
-    Task<ITransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
+    /// <summary>Begin a new database transaction</summary>
+    Task<ITransaction> BeginTransactionAsync(CancellationToken ct = default);
 }

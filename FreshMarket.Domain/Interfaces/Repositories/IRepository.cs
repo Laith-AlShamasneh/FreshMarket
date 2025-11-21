@@ -5,61 +5,30 @@
 /// </summary>
 public interface IRepository<T> where T : class
 {
-    /// <summary>
-    /// Retrieves an entity by its unique identifier.
-    /// </summary>
-    Task<T?> GetByIdAsync(
-        object id,
-        CancellationToken cancellationToken = default);
+    /// <summary>Get entity by ID</summary>
+    Task<T?> GetByIdAsync(object id, CancellationToken ct = default);
 
-    /// <summary>
-    /// Returns all entities of type T.
-    /// </summary>
-    Task<IReadOnlyList<T>> ListAllAsync(
-        CancellationToken cancellationToken = default);
+    /// <summary>Get all entities</summary>
+    Task<IReadOnlyList<T>> ListAllAsync(CancellationToken ct = default);
 
-    /// <summary>
-    /// Returns a list of entities that match the provided specification.
-    /// </summary>
-    Task<IReadOnlyList<T>> ListAsync(
-        ISpecification<T> specification,
-        CancellationToken cancellationToken = default);
+    /// <summary>Get entities matching specification</summary>
+    Task<IReadOnlyList<T>> ListAsync(ISpecification<T> spec, CancellationToken ct = default);
 
-    /// <summary>
-    /// Returns the first entity that matches the specification, or null if none.
-    /// </summary>
-    Task<T?> FirstOrDefaultAsync(
-        ISpecification<T> specification,
-        CancellationToken cancellationToken = default);
+    /// <summary>Get first entity matching specification</summary>
+    Task<T?> FirstOrDefaultAsync(ISpecification<T> spec, CancellationToken ct = default);
 
-    /// <summary>
-    /// Adds a new entity to the repository.
-    /// </summary>
-    Task<T> AddAsync(
-        T entity,
-        CancellationToken cancellationToken = default);
+    /// <summary>Add new entity</summary>
+    Task<T> AddAsync(T entity, CancellationToken ct = default);
 
-    /// <summary>
-    /// Adds multiple entities to the repository.
-    /// </summary>
-    Task AddRangeAsync(
-        IEnumerable<T> entities,
-        CancellationToken cancellationToken = default);
+    /// <summary>Add multiple entities</summary>
+    Task AddRangeAsync(IEnumerable<T> entities, CancellationToken ct = default);
 
-    /// <summary>
-    /// Marks an existing entity for update in the current unit of work.
-    /// </summary>
+    /// <summary>Update existing entity</summary>
     void Update(T entity);
 
-    /// <summary>
-    /// Marks an entity for deletion in the current unit of work.
-    /// </summary>
+    /// <summary>Delete entity</summary>
     void Delete(T entity);
 
-    /// <summary>
-    /// Returns the total count of entities, optionally filtered by a specification.
-    /// </summary>
-    Task<int> CountAsync(
-        ISpecification<T>? specification = null,
-        CancellationToken cancellationToken = default);
+    /// <summary>Get count with optional filter</summary>
+    Task<int> CountAsync(ISpecification<T>? spec = null, CancellationToken ct = default);
 }

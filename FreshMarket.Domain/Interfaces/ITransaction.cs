@@ -5,13 +5,9 @@
 /// </summary>
 public interface ITransaction : IAsyncDisposable
 {
-    /// <summary>
-    /// Commits the transaction.
-    /// </summary>
-    Task CommitAsync(CancellationToken cancellationToken = default);
+    /// <summary>Commit the transaction</summary>
+    Task CommitAsync(CancellationToken ct = default);
 
-    /// <summary>
-    /// Rolls back the transaction.
-    /// </summary>
-    Task RollbackAsync(CancellationToken cancellationToken = default);
+    /// <summary>Rollback the transaction</summary>
+    Task RollbackAsync(CancellationToken ct = default);
 }
