@@ -42,12 +42,7 @@ public interface IUnitOfWork : IAsyncDisposable
     IReview ReviewRepository { get; }
 
     // ────────────────────────────── Persistence ──────────────────────────────
-    /// <summary>Save all changes synchronously</summary>
     int SaveChanges();
-
-    /// <summary>Save all changes asynchronously</summary>
     Task<int> SaveChangesAsync(CancellationToken ct = default);
-
-    /// <summary>Begin a new database transaction</summary>
     Task<ITransaction> BeginTransactionAsync(CancellationToken ct = default);
 }
