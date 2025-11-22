@@ -5,7 +5,51 @@ public class ApiResponse<T>
     public HttpResponseStatus Code { get; set; }
     public bool Success { get; set; }
     public string Message { get; set; } = string.Empty;
+    public string? ErrorCode { get; set; }
     public T? Data { get; set; }
+    public Dictionary<string, string>? ValidationErrors { get; set; }
+
+    public static ApiResponse<T> Ok(
+        T data,
+        MessageType messageType,
+        Lang lang,
+        HttpResponseStatus status = HttpResponseStatus.OK)
+        => new()
+        {
+            Code = status,
+            Success = true,
+            Message = Messages.Get(messageType, lang),
+            Data = data
+        };
+
+    public static ApiResponse<T> Fail(
+        string errorCode,
+        string message,
+        HttpResponseStatus status = HttpResponseStatus.BadRequest,
+        Dictionary<string, string>? validationErrors = null)
+        => new()
+        {
+            Code = status,
+            Success = false,
+            ErrorCode = errorCode,
+            Message = message,
+            ValidationErrors = validationErrors
+        };
+
+    public static ApiResponse<T> Fail(
+        string errorCode,
+        MessageType messageType,
+        Lang lang,
+        HttpResponseStatus status = HttpResponseStatus.BadRequest,
+        Dictionary<string, string>? validationErrors = null)
+        => new()
+        {
+            Code = status,
+            Success = false,
+            ErrorCode = errorCode,
+            Message = Messages.Get(messageType, lang),
+            ValidationErrors = validationErrors
+        };
 }
 
 public class ServiceResult<T>
