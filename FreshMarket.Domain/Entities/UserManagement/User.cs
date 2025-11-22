@@ -14,6 +14,9 @@ public class User : Base
     public long PersonId { get; set; }
     public Person Person { get; set; } = null!;
 
+    [MaxLength(20)]
+    public string? Username { get; set; }
+
     [MaxLength(256)]
     public string? PasswordHash { get; set; }
 

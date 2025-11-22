@@ -7,7 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="ViewModels\Response\" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FreshMarket.Domain\FreshMarket.Domain.csproj" />
+    <ProjectReference Include="..\FreshMarket.Shared\FreshMarket.Shared.csproj" />
   </ItemGroup>
 
 </Project>
