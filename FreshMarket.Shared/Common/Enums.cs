@@ -10,7 +10,6 @@ public enum Lang
 }
 
 // ────────────────────────────── HTTP Semantic Codes (Internal Use) ──────────────────────────────
-// These represent logical statuses you embed in ApiResponse while always returning HTTP 200.
 public enum HttpResponseStatus
 {
     [Description("OK")] OK = 200,
