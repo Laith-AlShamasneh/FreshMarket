@@ -1,5 +1,5 @@
-﻿using FreshMarket.Domain.Entities.SharedManagement;
-using FreshMarket.Shared.Common;
+﻿using FreshMarket.Domain.Common;
+using FreshMarket.Domain.Entities.SharedManagement;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 

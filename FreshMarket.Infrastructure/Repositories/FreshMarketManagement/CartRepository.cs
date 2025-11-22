@@ -16,7 +16,7 @@ public class CartRepository(
 
     public async Task<Cart> GetOrCreateAsync(long? userId, Guid sessionId, CancellationToken ct = default)
     {
-        Guard.AgainstEmpty(sessionId, nameof(sessionId));
+        Guard.AgainstEmptyGuid(sessionId, nameof(sessionId));
 
         // Try to find existing cart
         Cart? cart = null;

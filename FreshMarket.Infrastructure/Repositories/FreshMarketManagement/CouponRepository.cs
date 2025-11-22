@@ -1,7 +1,7 @@
-﻿using FreshMarket.Domain.Entities.FreshMarketManagement;
+﻿using FreshMarket.Domain.Common;
+using FreshMarket.Domain.Entities.FreshMarketManagement;
 using FreshMarket.Domain.Interfaces.Repositories.FreshMarketManagement;
 using FreshMarket.Infrastructure.Data;
-using FreshMarket.Shared.Common;
 using FreshMarket.Shared.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -56,7 +56,7 @@ public class CouponRepository(
     public async Task<bool> IsCodeUsedBySessionAsync(string code, Guid sessionId, CancellationToken ct = default)
     {
         Guard.AgainstNullOrWhiteSpace(code, nameof(code));
-        Guard.AgainstEmpty(sessionId, nameof(sessionId));
+        Guard.AgainstEmptyGuid(sessionId, nameof(sessionId));
 
         return await ExecutionHelper.ExecuteAsync(
             () => _context.OrderItems

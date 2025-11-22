@@ -19,7 +19,6 @@ public class SignInLogRepository(
         long? userId,
         string? ipAddress,
         bool isSuccessful,
-        LoginFailureReason? failureReason = null,
         CancellationToken ct = default)
     {
         if (!userId.HasValue || userId <= 0) return;
@@ -29,7 +28,6 @@ public class SignInLogRepository(
             UserId = userId,
             IpAddress = ipAddress,
             IsSuccessful = isSuccessful,
-            FailureReason = failureReason,
             AttemptedAt = DateTime.UtcNow
         };
 

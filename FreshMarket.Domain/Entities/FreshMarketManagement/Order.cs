@@ -1,6 +1,6 @@
-﻿using FreshMarket.Domain.Entities.SharedManagement;
+﻿using FreshMarket.Domain.Common;
+using FreshMarket.Domain.Entities.SharedManagement;
 using FreshMarket.Domain.Entities.UserManagement;
-using FreshMarket.Shared.Common;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -65,7 +65,6 @@ public class Order : Base
     public string? Notes { get; set; }
 
     public OrderStatus OrderStatus { get; set; } = OrderStatus.Pending;
-    public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
     public PaymentMethodType PaymentMethod { get; set; } = PaymentMethodType.CreditCard;
     public ShippingMethodType ShippingMethod { get; set; } = ShippingMethodType.Standard;
 

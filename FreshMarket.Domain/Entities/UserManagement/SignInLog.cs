@@ -18,7 +18,4 @@ public class SignInLog
     public string? IpAddress { get; set; }
 
     public bool IsSuccessful { get; set; }
-
-    [MaxLength(500)]
-    public LoginFailureReason? FailureReason { get; set; }
 }
