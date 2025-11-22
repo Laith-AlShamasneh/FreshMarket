@@ -2,12 +2,16 @@
 
 public class ServiceResult<T>
 {
-    public bool IsSuccess { get; set; }
-    public string? ErrorMessage { get; set; }
-    public T? Data { get; set; }
+    public bool IsSuccess { get; init; }
+    public string? ErrorCode { get; init; }
+    public string? ErrorMessage { get; init; }
+    public T? Data { get; init; }
 
-    public static ServiceResult<T> Success(T data) => new() { IsSuccess = true, Data = data };
-    public static ServiceResult<T> Failure(string error) => new() { IsSuccess = false, ErrorMessage = error };
+    public static ServiceResult<T> Success(T data) =>
+        new() { IsSuccess = true, Data = data };
+
+    public static ServiceResult<T> Failure(string errorCode, string errorMessage) =>
+        new() { IsSuccess = false, ErrorCode = errorCode, ErrorMessage = errorMessage };
 }
 
 public class ApiResponse<T>
@@ -23,8 +27,8 @@ public class ApiResponse<T>
         T data,
         MessageType messageType,
         Lang lang,
-        HttpResponseStatus status = HttpResponseStatus.OK)
-        => new()
+        HttpResponseStatus status = HttpResponseStatus.OK) =>
+        new()
         {
             Code = status,
             Success = true,
@@ -34,25 +38,11 @@ public class ApiResponse<T>
 
     public static ApiResponse<T> Fail(
         string errorCode,
-        string message,
-        HttpResponseStatus status = HttpResponseStatus.BadRequest,
-        Dictionary<string, string>? validationErrors = null)
-        => new()
-        {
-            Code = status,
-            Success = false,
-            ErrorCode = errorCode,
-            Message = message,
-            ValidationErrors = validationErrors
-        };
-
-    public static ApiResponse<T> Fail(
-        string errorCode,
         MessageType messageType,
         Lang lang,
         HttpResponseStatus status = HttpResponseStatus.BadRequest,
-        Dictionary<string, string>? validationErrors = null)
-        => new()
+        Dictionary<string, string>? validationErrors = null) =>
+        new()
         {
             Code = status,
             Success = false,

@@ -6,6 +6,14 @@
 /// </summary>
 public static class ErrorCodes
 {
+    public static class Common
+    {
+        public const string UNKNOWN = "COMMON_UNKNOWN";
+        public const string VALIDATION = "COMMON_VALIDATION";
+        public const string NOT_FOUND = "COMMON_NOT_FOUND";
+        public const string CONFLICT = "COMMON_CONFLICT";
+    }
+
     public static class System
     {
         public const string UNEXPECTED = "SYSTEM_UNEXPECTED";
@@ -45,14 +53,13 @@ public static class ErrorCodes
     {
         public const string NOT_FOUND = "RESOURCE_NOT_FOUND";
         public const string ALREADY_EXISTS = "RESOURCE_ALREADY_EXISTS";
-        public const string CONFLICT = "RESOURCE_CONFLICT";
         public const string DELETION_FAILED = "RESOURCE_DELETION_FAILED";
     }
 
     public static class Order
     {
-        public const string INVALID_STATUS = "ORDER_INVALID_STATUS";
         public const string NOT_FOUND = "ORDER_NOT_FOUND";
+        public const string INVALID_STATUS = "ORDER_INVALID_STATUS";
         public const string CREATE_FAILED = "ORDER_CREATE_FAILED";
         public const string CANCEL_FAILED = "ORDER_CANCEL_FAILED";
     }
