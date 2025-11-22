@@ -41,12 +41,14 @@ public enum MessageType
     DeleteFailed,
     RetrieveSuccessfully,
     RetrieveFailed,
+    NoDataFound,
 
     // Auth
     UserLoginSuccess,
     InvalidUserLogin,
     PasswordIncorrect,
     EmailNotFound,
+    DontHavePermission,
 
     // Order / Payment / Inventory
     OrderPlacedSuccessfully,

@@ -19,26 +19,12 @@ public static class Messages
 
         [MessageType.NoDataFound] = new() { [Lang.Ar] = "لا توجد بيانات", [Lang.En] = "No data found" },
 
-        // Status
-        [MessageType.ActiveSuccessfully] = new() { [Lang.Ar] = "تم تفعيل الحساب بنجاح", [Lang.En] = "Account activated successfully" },
-        [MessageType.ActiveFailed] = new() { [Lang.Ar] = "حدثت مشكلة، لم يتم تفعيل الحساب", [Lang.En] = "Failed to activate account" },
-
-        [MessageType.DeactiveSuccessfully] = new() { [Lang.Ar] = "تم إلغاء تفعيل الحساب بنجاح", [Lang.En] = "Account deactivated successfully" },
-        [MessageType.DeactiveFailed] = new() { [Lang.Ar] = "حدثت مشكلة، لم يتم إلغاء التفعيل", [Lang.En] = "Failed to deactivate account" },
 
         // Authentication
         [MessageType.UserLoginSuccess] = new() { [Lang.Ar] = "تم تسجيل الدخول بنجاح", [Lang.En] = "Logged in successfully" },
         [MessageType.InvalidUserLogin] = new() { [Lang.Ar] = "اسم المستخدم أو كلمة المرور غير صحيحة", [Lang.En] = "Invalid username or password" },
         [MessageType.PasswordIncorrect] = new() { [Lang.Ar] = "كلمة المرور غير صحيحة", [Lang.En] = "Incorrect password" },
         [MessageType.EmailNotFound] = new() { [Lang.Ar] = "البريد الإلكتروني غير موجود", [Lang.En] = "Email not found" },
-        [MessageType.LoginAllowedLimitFailed] = new() { [Lang.Ar] = "تجاوزت عدد المحاولات المسموح بها، تم قفل الحساب مؤقتاً", [Lang.En] = "Login attempts exceeded. Account locked temporarily." },
-
-        // Password
-        [MessageType.ChangePasswordSuccessfully] = new() { [Lang.Ar] = "تم تغيير كلمة المرور بنجاح", [Lang.En] = "Password changed successfully" },
-        [MessageType.ChangePasswordFailed] = new() { [Lang.Ar] = "حدثت مشكلة، لم يتم تغيير كلمة المرور", [Lang.En] = "Failed to change password" },
-
-        [MessageType.ResetPasswordSuccessfully] = new() { [Lang.Ar] = "تم إعادة تعيين كلمة المرور بنجاح", [Lang.En] = "Password reset successfully" },
-        [MessageType.ResetPasswordFailed] = new() { [Lang.Ar] = "حدثت مشكلة، لم يتم إعادة تعيين كلمة المرور", [Lang.En] = "Failed to reset password" },
 
         // Permissions
         [MessageType.DontHavePermission] = new() { [Lang.Ar] = "ليس لديك صلاحية لتنفيذ هذا الإجراء", [Lang.En] = "You do not have permission to perform this action" },
@@ -50,7 +36,6 @@ public static class Messages
 
         // Stock
         [MessageType.OutOfStock] = new() { [Lang.Ar] = "المنتج نفد من المخزون", [Lang.En] = "Product is out of stock" },
-        [MessageType.LowStockWarning] = new() { [Lang.Ar] = "تحذير: كمية المخزون منخفضة", [Lang.En] = "Warning: Low stock level" },
 
         // Coupons
         [MessageType.CouponApplied] = new() { [Lang.Ar] = "تم تطبيق الكوبون بنجاح", [Lang.En] = "Coupon applied successfully" },

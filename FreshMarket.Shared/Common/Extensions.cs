@@ -5,29 +5,73 @@ namespace FreshMarket.Shared.Common;
 
 public static class IQueryableExtensions
 {
+    /// <summary>
+    /// Applies search (optional), sorting (optional) and pagination to a queryable source,
+    /// returning a paginated list abstraction.
+    /// </summary>
+    /// <typeparam name="T">Entity type</typeparam>
+    /// <param name="source">Base query</param>
+    /// <param name="request">Pagination, search and sorting parameters</param>
+    /// <param name="searchSelectors">
+    /// Optional list of string property names to search (e.g. new[] { "Name", "Description" }).
+    /// Only used if request.SearchValue is provided.
+    /// </param>
     public static async Task<IPaginatedList<T>> ToPaginatedListAsync<T>(
         this IQueryable<T> source,
         PaginationRequest request,
+        IEnumerable<string>? searchSelectors = null,
         CancellationToken ct = default) where T : class
     {
-        if (!string.IsNullOrWhiteSpace(request.SearchValue))
+        // Validate pagination
+        var pageNumber = request.PageNumber < 1 ? 1 : request.PageNumber;
+        var pageSize = request.PageSize <= 0 ? 10 : request.PageSize;
+
+        // Apply search if requested
+        if (!string.IsNullOrWhiteSpace(request.SearchValue) && searchSelectors is not null)
         {
             var search = request.SearchValue.Trim();
-            source = source.Where(x =>
-                EF.Functions.Like(EF.Property<string>(x, "Name") ?? "", $"%{search}%") ||
-                EF.Functions.Like(EF.Property<string>(x, "Description") ?? "", $"%{search}%"));
+
+            // Build a dynamic OR predicate: e.g. Name.Contains(search) OR Description.Contains(search)
+            // Using EF.Functions.Like for database-side pattern matching.
+            var predicates = searchSelectors
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Select(p => $"{p}.Contains(@0)")
+                .ToList();
+
+            if (predicates.Count > 0)
+            {
+                var fullPredicate = string.Join(" OR ", predicates);
+                source = source.Where(fullPredicate, search);
+            }
         }
 
-        var count = await source.CountAsync(ct);
+        var totalCount = await source.CountAsync(ct);
 
+        // Sorting
         if (!string.IsNullOrWhiteSpace(request.SortBy))
         {
-            var direction = request.SortDirection == SortDirection.Ascending ? "ASC" : "DESC";
-            source = source.OrderBy($"{request.SortBy} {direction}");
+            var direction = request.SortDirection == SortDirection.Descending ? "DESC" : "ASC";
+
+            try
+            {
+                // Use dynamic ordering; if property name invalid it will throw => we catch & ignore
+                source = source.OrderBy($"{request.SortBy} {direction}");
+            }
+            catch
+            {
+                // Invalid SortBy supplied; ignore sorting
+            }
         }
 
-        var items = await source.Skip(request.Skip).Take(request.Take).ToListAsync(ct);
+        var skip = (pageNumber - 1) * pageSize;
 
-        return new PaginatedList<T>(items, request.PageNumber, request.PageSize, count);
+        var items = pageSize == 0
+            ? []
+            : await source
+                .Skip(skip)
+                .Take(pageSize)
+                .ToListAsync(ct);
+
+        return new PaginatedList<T>(items, pageNumber, pageSize, totalCount);
     }
 }
