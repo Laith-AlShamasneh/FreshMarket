@@ -4,130 +4,60 @@ using System.Reflection;
 namespace FreshMarket.Shared.Helpers;
 
 /// <summary>
-/// Provides safe and convenient utilities for working with enums: parsing, validation, enumeration, metadata extraction.
-/// Designed for production scenarios (API dropdowns, input validation, display text mapping).
+/// Minimal helper for working with enums in a beginner-friendly e-commerce project.
+/// Provides safe parsing, listing, and display (via DescriptionAttribute) functionality.
 /// </summary>
 public static class EnumHelper
 {
-    /// <summary>Parses the string to enum T (case-insensitive) or throws with a clear message.</summary>
+    /// <summary>
+    /// Parses a string into enum T (case-insensitive). Throws if invalid.
+    /// </summary>
     public static T Parse<T>(string value) where T : struct, Enum
         => TryParse(value, out T result)
             ? result
             : throw new ArgumentException($"Invalid {typeof(T).Name} value: '{value}'", nameof(value));
 
-    /// <summary>Parses the string to enum T (case-insensitive); returns default(T) if invalid.</summary>
-    public static T ParseOrDefault<T>(string value) where T : struct, Enum
-        => TryParse(value, out T result) ? result : default;
-
-    /// <summary>Parses the string to enum T (case-sensitive exact match) or throws if not found.</summary>
-    public static T ParseExact<T>(string value) where T : struct, Enum
-        => Enum.TryParse<T>(value, ignoreCase: false, out var parsed) && Enum.IsDefined(typeof(T), parsed)
-            ? parsed
-            : throw new ArgumentException($"Invalid exact {typeof(T).Name} value: '{value}'", nameof(value));
-
-    /// <summary>Attempts to parse the string to enum T (case-insensitive).</summary>
-    public static bool TryParse<T>(string value, out T result) where T : struct, Enum
+    /// <summary>
+    /// Attempts to parse a string into enum T (case-insensitive).
+    /// </summary>
+    public static bool TryParse<T>(string? value, out T result) where T : struct, Enum
     {
-        result = default!;
-        if (string.IsNullOrWhiteSpace(value))
-            return false;
-
-        return Enum.TryParse<T>(value.Trim(), ignoreCase: true, out var parsed)
-               && Enum.IsDefined(typeof(T), parsed);
+        return Enum.TryParse(value?.Trim(), true, out result)
+               && Enum.IsDefined(typeof(T), result);
     }
 
-    /// <summary>Attempts to parse an integer to enum T.</summary>
-    public static bool TryParse<T>(int raw, out T result) where T : struct, Enum
-    {
-        result = default!;
-        if (!Enum.IsDefined(typeof(T), raw))
-            return false;
+    /// <summary>
+    /// Parses a string safely. Returns null instead of throwing if invalid.
+    /// </summary>
+    public static T? ParseOrNull<T>(string? value) where T : struct, Enum
+        => TryParse(value, out T parsed) ? parsed : (T?)null;
 
-        result = (T)Enum.ToObject(typeof(T), raw);
-        return true;
-    }
-
-    /// <summary>Returns true if the provided integer maps to a defined enum value.</summary>
-    public static bool IsDefined<T>(int raw) where T : struct, Enum
-        => Enum.IsDefined(typeof(T), raw);
-
-    /// <summary>Returns true if the provided string maps to a defined enum name (case-insensitive).</summary>
-    public static bool IsDefined<T>(string name) where T : struct, Enum
-        => Enum.GetNames(typeof(T)).Any(n => string.Equals(n, name, StringComparison.OrdinalIgnoreCase));
-
-    /// <summary>Throws if value is not a defined enum member.</summary>
-    public static void RequireDefined<T>(T value) where T : struct, Enum
-    {
-        if (!Enum.IsDefined(typeof(T), value))
-            throw new ArgumentOutOfRangeException(nameof(value), $"Value '{value}' is not a valid {typeof(T).Name}.");
-    }
-
-    /// <summary>Gets all enum values as a strongly typed list.</summary>
+    /// <summary>
+    /// Returns all defined enum values.
+    /// </summary>
     public static IReadOnlyList<T> GetValues<T>() where T : struct, Enum
         => [.. Enum.GetValues(typeof(T)).Cast<T>()];
 
-    /// <summary>Gets all enum names as a read-only list.</summary>
-    public static IReadOnlyList<string> GetNames<T>() where T : struct, Enum
-        => [.. Enum.GetNames(typeof(T))];
+    /// <summary>
+    /// Returns (Value, Name) pairs for enum T. Useful for API dropdowns.
+    /// </summary>
+    public static IReadOnlyList<(T Value, string Name)> GetItems<T>() where T : struct, Enum
+        => GetValues<T>().Select(v => (v, v.ToString())).ToList();
 
-    /// <summary>Returns (Name, Value) pairs for enum T.</summary>
-    public static IReadOnlyList<(string Name, T Value)> GetNameValuePairs<T>() where T : struct, Enum
-        => GetValues<T>().Select(v => (v.ToString(), v)).ToList();
-
-    /// <summary>Returns a dictionary mapping names to numeric values (int) of enum T.</summary>
-    public static IReadOnlyDictionary<string, int> ToDictionary<T>() where T : struct, Enum
-        => Enum.GetValues(typeof(T))
-            .Cast<T>()
-            .ToDictionary(v => v.ToString(), v => Convert.ToInt32(v));
-
-    /// <summary>Gets DescriptionAttribute text if present; otherwise returns enum name.</summary>
+    /// <summary>
+    /// Returns DescriptionAttribute text for an enum value if present; otherwise its name.
+    /// </summary>
     public static string GetDescription<T>(T value) where T : struct, Enum
     {
         var name = value.ToString();
-        var field = typeof(T).GetField(name);
-        if (field is null) return name;
-
-        var attr = field.GetCustomAttribute<DescriptionAttribute>();
-        return attr?.Description ?? name;
+        var member = typeof(T).GetField(name);
+        var desc = member?.GetCustomAttribute<DescriptionAttribute>();
+        return desc?.Description ?? name;
     }
 
-    /// <summary>Attempts to get description for value; returns false if value not defined.</summary>
-    public static bool TryGetDescription<T>(T value, out string description) where T : struct, Enum
-    {
-        description = string.Empty;
-        if (!Enum.IsDefined(typeof(T), value))
-            return false;
-
-        description = GetDescription(value);
-        return true;
-    }
-
-    /// <summary>Maps a list of integer raw values to defined enum values, skipping invalid ones.</summary>
-    public static IReadOnlyList<T> FromValues<T>(IEnumerable<int> rawValues) where T : struct, Enum
-        => rawValues
-            .Where(IsDefined<T>)
-            .Select(v => (T)Enum.ToObject(typeof(T), v))
-            .ToList();
-
-    /// <summary>Maps a list of names (case-insensitive) to defined enum values, skipping invalid ones.</summary>
-    public static IReadOnlyList<T> FromNames<T>(IEnumerable<string> names) where T : struct, Enum
-        => names
-            .Where(n => TryParse<T>(n, out _))
-            .Select(n => Parse<T>(n))
-            .ToList();
-
     /// <summary>
-    /// Converts a nullable enum to its underlying value or returns null if not set.
-    /// Useful for serialization / API responses.
+    /// Returns (Value, Description) pairs for enum T. Good for UI display.
     /// </summary>
-    public static int? ToNullableInt<T>(T? value) where T : struct, Enum
-        => value.HasValue ? Convert.ToInt32(value.Value) : null;
-
-    /// <summary>
-    /// Safely converts an integer to a nullable enum (returns null if undefined).
-    /// </summary>
-    public static T? ToNullableEnum<T>(int? raw) where T : struct, Enum
-        => raw.HasValue && IsDefined<T>(raw.Value)
-            ? (T)Enum.ToObject(typeof(T), raw.Value)
-            : null;
+    public static IReadOnlyList<(T Value, string Description)> GetDisplayItems<T>() where T : struct, Enum
+        => GetValues<T>().Select(v => (v, GetDescription(v))).ToList();
 }

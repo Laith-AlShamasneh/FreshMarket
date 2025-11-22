@@ -5,33 +5,19 @@ using System.Runtime.CompilerServices;
 namespace FreshMarket.Shared.Helpers;
 
 /// <summary>
-/// Provides fluent guard clauses to validate arguments early, producing meaningful exceptions.
-/// Supports primitives, collections, enums, Date/Time semantics, and custom predicates.
+/// Minimal guard utility for argument validation in a beginner-friendly e-commerce project.
+/// Each method throws a meaningful exception early and returns the validated value.
 /// </summary>
 public static class Guard
 {
-    #region Existing Methods (Unchanged)
-
+    /// <summary>Ensures a reference is not null.</summary>
     public static T AgainstNull<T>(
-        [NotNull] T? value,
+        T? value,
         [CallerArgumentExpression(nameof(value))] string? paramName = null)
+        where T : class
         => value ?? throw new ArgumentNullException(paramName, "Value cannot be null.");
 
-    public static T AgainstNullOrEmpty<T>(
-        [NotNull] T? value,
-        [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        where T : IEnumerable<object>
-        => value is null || !value.Any()
-            ? throw new ArgumentException("Collection cannot be null or empty.", paramName)
-            : value;
-
-    public static string AgainstNullOrWhiteSpace(
-        [NotNull] string? value,
-        [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => string.IsNullOrWhiteSpace(value)
-            ? throw new ArgumentException("Value cannot be null, empty, or whitespace.", paramName)
-            : value;
-
+    /// <summary>Ensures a value type is not its default value (e.g., 0, default struct).</summary>
     public static T AgainstDefault<T>(
         T value,
         [CallerArgumentExpression(nameof(value))] string? paramName = null)
@@ -40,203 +26,87 @@ public static class Guard
             ? throw new ArgumentException("Value cannot be the default value.", paramName)
             : value;
 
-    public static long AgainstZero(
-        long value,
+    /// <summary>Ensures a string is not null/empty/whitespace.</summary>
+    public static string AgainstNullOrWhiteSpace(
+        string? value,
         [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => value == 0
-            ? throw new ArgumentException("Value cannot be zero.", paramName)
+        => string.IsNullOrWhiteSpace(value)
+            ? throw new ArgumentException("Value cannot be null, empty, or whitespace.", paramName)
             : value;
 
-    public static long AgainstNegative(
-        long value,
+    /// <summary>Ensures an enumerable (collection, list, array) is not null or empty.</summary>
+    public static IEnumerable<T> AgainstNullOrEmpty<T>(
+        IEnumerable<T>? sequence,
+        [CallerArgumentExpression(nameof(sequence))] string? paramName = null)
+        => sequence is null || !sequence.Any()
+            ? throw new ArgumentException("Collection cannot be null or empty.", paramName)
+            : sequence;
+
+    /// <summary>Ensures an int is greater than zero.</summary>
+    public static int AgainstNegativeOrZero(
+        int value,
         [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => value < 0
-            ? throw new ArgumentException("Value cannot be negative.", paramName)
+        => value <= 0
+            ? throw new ArgumentException("Value must be greater than zero.", paramName)
             : value;
 
+    /// <summary>Ensures a long is greater than zero.</summary>
     public static long AgainstNegativeOrZero(
         long value,
         [CallerArgumentExpression(nameof(value))] string? paramName = null)
         => value <= 0
-            ? throw new ArgumentException("Value cannot be negative or zero.", paramName)
+            ? throw new ArgumentException("Value must be greater than zero.", paramName)
             : value;
 
+    /// <summary>Ensures a decimal is greater than zero.</summary>
     public static decimal AgainstNegativeOrZero(
         decimal value,
         [CallerArgumentExpression(nameof(value))] string? paramName = null)
         => value <= 0m
-            ? throw new ArgumentException("Value cannot be negative or zero.", paramName)
+            ? throw new ArgumentException("Value must be greater than zero.", paramName)
             : value;
 
-    public static int AgainstOutOfRange(
-        int value,
-        int min,
-        int max,
-        [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => value < min || value > max
-            ? throw new ArgumentOutOfRangeException(
-                paramName,
-                value,
-                $"Value must be between {min} and {max}, inclusive.")
-            : value;
-
-    public static Guid AgainstEmpty(
+    /// <summary>Ensures a Guid is not empty.</summary>
+    public static Guid AgainstEmptyGuid(
         Guid value,
         [CallerArgumentExpression(nameof(value))] string? paramName = null)
         => value == Guid.Empty
             ? throw new ArgumentException("Guid cannot be empty.", paramName)
             : value;
 
-    public static Guid AgainstEmpty(
-        [NotNull] Guid? value,
-        [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => value is null || value == Guid.Empty
-            ? throw new ArgumentException("Guid cannot be null or empty.", paramName)
-            : value.Value;
-
-    #endregion
-
-    #region Added Numeric Variants
-
-    public static int AgainstNegativeOrZero(
-        int value,
-        [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => value <= 0
-            ? throw new ArgumentException("Value cannot be negative or zero.", paramName)
-            : value;
-
-    public static double AgainstNegativeOrZero(
-        double value,
-        [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => value <= 0d
-            ? throw new ArgumentException("Value cannot be negative or zero.", paramName)
-            : value;
-
-    public static decimal AgainstNegative(
-        decimal value,
-        [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => value < 0m
-            ? throw new ArgumentException("Value cannot be negative.", paramName)
-            : value;
-
-    public static int AgainstNegative(
-        int value,
-        [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => value < 0
-            ? throw new ArgumentException("Value cannot be negative.", paramName)
-            : value;
-
-    public static double AgainstNegative(
-        double value,
-        [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => value < 0d
-            ? throw new ArgumentException("Value cannot be negative.", paramName)
-            : value;
-
-    #endregion
-
-    #region Collections / Sequences
-
-    public static IReadOnlyCollection<T> AgainstNullOrEmpty<T>(
-        [NotNull] IReadOnlyCollection<T>? collection,
-        [CallerArgumentExpression(nameof(collection))] string? paramName = null)
-        => collection is null || collection.Count == 0
-            ? throw new ArgumentException("Collection cannot be null or empty.", paramName)
-            : collection;
-
-    public static IEnumerable<T> AgainstEmpty<T>(
-        IEnumerable<T> sequence,
-        [CallerArgumentExpression(nameof(sequence))] string? paramName = null)
-        => sequence is null || !sequence.Any()
-            ? throw new ArgumentException("Sequence cannot be null or empty.", paramName)
-            : sequence;
-
-    #endregion
-
-    #region Enum Validations
-
-    public static TEnum AgainstUndefinedEnum<TEnum>(
-        TEnum value,
-        [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        where TEnum : struct, Enum
-        => !Enum.IsDefined(typeof(TEnum), value)
-            ? throw new ArgumentOutOfRangeException(paramName, value, $"Value '{value}' is not a valid {typeof(TEnum).Name}.")
-            : value;
-
-    public static int AgainstUndefinedEnumValue<TEnum>(
-        int rawValue,
-        [CallerArgumentExpression(nameof(rawValue))] string? paramName = null)
-        where TEnum : struct, Enum
-        => !Enum.IsDefined(typeof(TEnum), rawValue)
-            ? throw new ArgumentOutOfRangeException(paramName, rawValue, $"Raw value '{rawValue}' is not defined for {typeof(TEnum).Name}.")
-            : rawValue;
-
-    #endregion
-
-    #region Date / Time Semantics
-
-    public static DateTime AgainstDefault(
-        DateTime value,
-        [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => value == default
-            ? throw new ArgumentException("DateTime cannot be default.", paramName)
-            : value;
-
-    public static DateTime AgainstFuture(
-        DateTime value,
-        [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => value > DateTime.UtcNow
-            ? throw new ArgumentException("DateTime cannot be in the future.", paramName)
-            : value;
-
-    public static DateTime AgainstPast(
-        DateTime value,
-        [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => value < DateTime.UtcNow
-            ? throw new ArgumentException("DateTime cannot be in the past.", paramName)
-            : value;
-
-    public static DateOnly AgainstDefault(
-        DateOnly value,
-        [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => value == default
-            ? throw new ArgumentException("DateOnly cannot be default.", paramName)
-            : value;
-
-    public static TimeSpan AgainstNegativeOrZero(
-        TimeSpan value,
-        [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => value <= TimeSpan.Zero
-            ? throw new ArgumentException("TimeSpan must be positive.", paramName)
-            : value;
-
-    #endregion
-
-    #region Range / Between
-
-    public static T AgainstNotInRange<T>(
+    /// <summary>Ensures a value lies within the inclusive range [min, max].</summary>
+    public static T AgainstOutOfRange<T>(
         T value,
         T min,
         T max,
         [CallerArgumentExpression(nameof(value))] string? paramName = null)
         where T : IComparable<T>
         => value.CompareTo(min) < 0 || value.CompareTo(max) > 0
-            ? throw new ArgumentOutOfRangeException(paramName, value, $"Value must be between {min} and {max} inclusive.")
+            ? throw new ArgumentOutOfRangeException(paramName, value,
+                $"Value must be between {min} and {max} inclusive.")
             : value;
 
-    public static decimal AgainstNotInRange(
-        decimal value,
-        decimal min,
-        decimal max,
+    /// <summary>Ensures an enum value is a defined member of its enum type.</summary>
+    public static TEnum AgainstUndefinedEnum<TEnum>(
+        TEnum value,
         [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => value < min || value > max
-            ? throw new ArgumentOutOfRangeException(paramName, value, $"Value must be between {min} and {max} inclusive.")
-            : value;
+        where TEnum : struct, Enum
+        => Enum.IsDefined(typeof(TEnum), value)
+            ? value
+            : throw new ArgumentOutOfRangeException(paramName, value,
+                $"Value '{value}' is not a valid {typeof(TEnum).Name}.");
 
-    #endregion
+    /// <summary>Ensures a raw int maps to a defined enum member.</summary>
+    public static int AgainstUndefinedEnumValue<TEnum>(
+        int rawValue,
+        [CallerArgumentExpression(nameof(rawValue))] string? paramName = null)
+        where TEnum : struct, Enum
+        => Enum.IsDefined(typeof(TEnum), rawValue)
+            ? rawValue
+            : throw new ArgumentOutOfRangeException(paramName, rawValue,
+                $"Raw value '{rawValue}' is not defined for {typeof(TEnum).Name}.");
 
-    #region Custom Predicate
-
+    /// <summary>Generic predicate-based guard. Throws if predicate returns true.</summary>
     public static T Against<T>(
         T value,
         Func<T, bool> predicate,
@@ -246,32 +116,13 @@ public static class Guard
             ? throw new ArgumentException(message, paramName)
             : value;
 
+    /// <summary>Requires a predicate be true; throws if false.</summary>
     public static T Require<T>(
         T value,
         Func<T, bool> condition,
         string message,
         [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => !condition(value)
-            ? throw new ArgumentException(message, paramName)
-            : value;
-
-    #endregion
-
-    #region Optional Custom Message Versions
-
-    public static string AgainstNullOrWhiteSpace(
-        [NotNull] string? value,
-        string message,
-        [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => string.IsNullOrWhiteSpace(value)
-            ? throw new ArgumentException(message, paramName)
-            : value;
-
-    public static T AgainstNull<T>(
-        [NotNull] T? value,
-        string message,
-        [CallerArgumentExpression(nameof(value))] string? paramName = null)
-        => value ?? throw new ArgumentNullException(paramName, message);
-
-    #endregion
+        => condition(value)
+            ? value
+            : throw new ArgumentException(message, paramName);
 }

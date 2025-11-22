@@ -1,20 +1,20 @@
 ﻿using Microsoft.Extensions.Logging;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace FreshMarket.Shared.Helpers;
 
 /// <summary>
-/// Centralized execution helpers for synchronous and asynchronous operations:
-/// - Standardized structured logging
-/// - Optional timing, retry, cancellation
-/// - Optional exception classification
-/// Keeps original simple Execute methods while offering advanced overloads.
+/// Very simple centralized execution helper:
+/// - Wraps operations in try/catch
+/// - Logs failures with caller context
+/// - Re-throws to preserve stack
+/// Keep it minimal for readability.
 /// </summary>
 public static class ExecutionHelper
 {
-    #region Basic (Existing)
-
+    /// <summary>
+    /// Executes a synchronous action with standardized error logging.
+    /// </summary>
     public static void Execute(
         Action action,
         ILogger logger,
@@ -25,109 +25,29 @@ public static class ExecutionHelper
         [CallerLineNumber] int lineNumber = 0)
     {
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(action);
+
         try
         {
             action();
         }
         catch (Exception ex)
         {
-            LogError(logger, ex, operation, memberName, filePath, lineNumber, parameters, isAsync: false);
+            logger.LogError(
+                ex,
+                "Operation failed: {Operation} | Member: {Member} | File: {File} | Line: {Line} | Params: {@Params}",
+                operation, memberName, Path.GetFileName(filePath), lineNumber, parameters);
             throw;
         }
     }
 
+    /// <summary>
+    /// Executes an asynchronous action with standardized error logging.
+    /// </summary>
     public static async Task ExecuteAsync(
         Func<Task> action,
         ILogger logger,
         string operation,
-        object? parameters = null,
-        [CallerMemberName] string memberName = "",
-        [CallerFilePath] string filePath = "",
-        [CallerLineNumber] int lineNumber = 0)
-    {
-        ArgumentNullException.ThrowIfNull(logger);
-        try
-        {
-            await action();
-        }
-        catch (Exception ex)
-        {
-            LogError(logger, ex, operation, memberName, filePath, lineNumber, parameters, isAsync: true);
-            throw;
-        }
-    }
-
-    public static async Task<T> ExecuteAsync<T>(
-        Func<Task<T>> action,
-        ILogger logger,
-        string operation,
-        object? parameters = null,
-        [CallerMemberName] string memberName = "",
-        [CallerFilePath] string filePath = "",
-        [CallerLineNumber] int lineNumber = 0)
-    {
-        ArgumentNullException.ThrowIfNull(logger);
-        try
-        {
-            return await action();
-        }
-        catch (Exception ex)
-        {
-            LogError(logger, ex, operation, memberName, filePath, lineNumber, parameters, isAsync: true);
-            throw;
-        }
-    }
-
-    #endregion
-
-    #region Enhanced Variants
-
-    /// <summary>
-    /// Executes an async action with timing and optional classification of exceptions.
-    /// </summary>
-    public static async Task<T> ExecuteTimedAsync<T>(
-        Func<Task<T>> action,
-        ILogger logger,
-        string operation,
-        object? parameters = null,
-        bool logSuccess = true,
-        [CallerMemberName] string memberName = "",
-        [CallerFilePath] string filePath = "",
-        [CallerLineNumber] int lineNumber = 0)
-    {
-        ArgumentNullException.ThrowIfNull(logger);
-        var sw = Stopwatch.StartNew();
-        try
-        {
-            var result = await action();
-            sw.Stop();
-            if (logSuccess)
-            {
-                logger.LogInformation(
-                    "Operation succeeded: {Operation} ({Elapsed} ms) | Member: {Member} | File: {File} | Line: {Line} | Params: {@Params}",
-                    operation, sw.ElapsedMilliseconds, memberName, Path.GetFileName(filePath), lineNumber, parameters);
-            }
-            return result;
-        }
-        catch (Exception ex)
-        {
-            sw.Stop();
-            LogError(logger, ex, operation, memberName, filePath, lineNumber, parameters, isAsync: true, sw.ElapsedMilliseconds);
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Executes an async action with retry for transient failures.
-    /// Basic exponential backoff (2^attempt * baseDelay).
-    /// </summary>
-    public static async Task<T> ExecuteWithRetryAsync<T>(
-        Func<Task<T>> action,
-        ILogger logger,
-        string operation,
-        int maxAttempts = 3,
-        int baseDelayMs = 200,
-        Func<Exception, bool>? isTransient = null,
         object? parameters = null,
         CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
@@ -135,102 +55,61 @@ public static class ExecutionHelper
         [CallerLineNumber] int lineNumber = 0)
     {
         ArgumentNullException.ThrowIfNull(logger);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxAttempts);
+        ArgumentNullException.ThrowIfNull(action);
 
-        isTransient ??= ex => ex is TimeoutException || ex.Message.Contains("transient", StringComparison.OrdinalIgnoreCase);
-
-        int attempt = 0;
-        Exception? lastException = null;
-
-        while (attempt < maxAttempts)
+        try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            attempt++;
-
-            try
-            {
-                return await action();
-            }
-            catch (Exception ex)
-            {
-                lastException = ex;
-
-                if (!isTransient(ex) || attempt == maxAttempts)
-                {
-                    LogError(logger, ex, $"{operation} (attempt {attempt}/{maxAttempts})",
-                        memberName, filePath, lineNumber, parameters, isAsync: true);
-                    throw;
-                }
-
-                var delay = TimeSpan.FromMilliseconds(baseDelayMs * Math.Pow(2, attempt - 1));
-                logger.LogWarning(
-                    ex,
-                    "Transient failure on {Operation} attempt {Attempt}/{Max}. Retrying in {Delay} ms...",
-                    operation, attempt, maxAttempts, delay.TotalMilliseconds);
-
-                await Task.Delay(delay, cancellationToken);
-            }
+            await action();
         }
-
-        // should never reach here as final attempt either succeeds or throws
-        throw lastException ?? new InvalidOperationException("Unknown failure in retry block.");
+        catch (Exception ex) when (LogAndRethrow(ex, logger, operation, memberName, filePath, lineNumber, parameters))
+        {
+            // The filter logs; rethrow keeps original stack.
+            throw;
+        }
     }
 
     /// <summary>
-    /// Executes an async action safely returning a success flag instead of throwing.
-    /// Useful for non-critical logging / secondary operations.
+    /// Executes an asynchronous function that returns a result with standardized error logging.
     /// </summary>
-    public static async Task<(bool Success, Exception? Error)> TryExecuteAsync(
-        Func<Task> action,
+    public static async Task<T> ExecuteAsync<T>(
+        Func<Task<T>> action,
         ILogger logger,
         string operation,
         object? parameters = null,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = 0)
     {
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(action);
+
         try
         {
-            await action();
-            return (true, null);
+            cancellationToken.ThrowIfCancellationRequested();
+            return await action();
         }
-        catch (Exception ex)
+        catch (Exception ex) when (LogAndRethrow(ex, logger, operation, memberName, filePath, lineNumber, parameters))
         {
-            LogError(logger, ex, operation, memberName, filePath, lineNumber, parameters, isAsync: true);
-            return (false, ex);
+            throw; // unreachable, filter always returns false after logging
         }
     }
 
-    #endregion
-
-    #region Internal Logging Helper
-
-    private static void LogError(
-        ILogger logger,
+    // Logging helper used in exception filters to avoid duplicate try/catch blocks.
+    private static bool LogAndRethrow(
         Exception ex,
+        ILogger logger,
         string operation,
         string memberName,
         string filePath,
         int lineNumber,
-        object? parameters,
-        bool isAsync,
-        long? elapsedMs = null)
+        object? parameters)
     {
-        var template = isAsync
-            ? "Async operation failed: {Operation} | Member: {Member} | File: {File} | Line: {Line} | Elapsed: {Elapsed} | Params: {@Params}"
-            : "Sync operation failed: {Operation} | Member: {Member} | File: {File} | Line: {Line} | Elapsed: {Elapsed} | Params: {@Params}";
-
         logger.LogError(
             ex,
-            template,
-            operation,
-            memberName,
-            Path.GetFileName(filePath),
-            lineNumber,
-            elapsedMs.HasValue ? $"{elapsedMs.Value} ms" : "n/a",
-            parameters);
+            "Operation failed: {Operation} | Member: {Member} | File: {File} | Line: {Line} | Params: {@Params}",
+            operation, memberName, Path.GetFileName(filePath), lineNumber, parameters);
+        return false; // filter condition => always rethrow
     }
-
-    #endregion
 }
