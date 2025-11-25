@@ -3,10 +3,6 @@ using FreshMarket.Domain.Interfaces.Repositories;
 
 namespace FreshMarket.Application.Services.Implementations.Specifications;
 
-/// <summary>
-/// Specifications for querying User entities.
-/// Located in Application Layer - defines business queries.
-/// </summary>
 public static class UserSpecifications
 {
     public static ISpecification<User> GetByUsernameOrEmail(string usernameOrEmail)
@@ -17,6 +13,11 @@ public static class UserSpecifications
     public static ISpecification<User> GetById(int userId)
     {
         return new UserByIdSpec(userId);
+    }
+
+    public static ISpecification<User> GetByRoleId(int roleId)
+    {
+        return new UserByRoleIdSpec(roleId);
     }
 
     public static ISpecification<User> GetByUsername(string username)
@@ -66,6 +67,16 @@ public static class UserSpecifications
             : base(u => u.Person.Email == email)
         {
             AddInclude(u => u.Person);
+        }
+    }
+
+    private sealed class UserByRoleIdSpec : BaseSpecification<User>
+    {
+        public UserByRoleIdSpec(int userId)
+            : base(u => u.UserId == userId)
+        {
+            AddInclude(u => u.Person);
+            AddInclude(u => u.UserRoles);
         }
     }
 }

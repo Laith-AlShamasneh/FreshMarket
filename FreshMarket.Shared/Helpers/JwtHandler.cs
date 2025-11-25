@@ -15,8 +15,8 @@ public static class JwtHandler
     /// Generates a JWT token with user claims.
     /// </summary>
     public static string GenerateToken(
-        int userId,
-        IReadOnlyList<int> roleIds,
+        long userId,
+        IReadOnlyList<long> roleIds,
         Lang language,
         string secretKey,
         string? issuer = null,
@@ -108,7 +108,7 @@ public static class JwtHandler
     /// <summary>
     /// Extracts user ID from JWT token (expects NameIdentifier claim).
     /// </summary>
-    public static int? ExtractUserId(string token)
+    public static long? ExtractUserId(string token)
     {
         var userIdStr = ExtractClaimValue(token, ClaimTypes.NameIdentifier);
         return int.TryParse(userIdStr, out var userId) ? userId : null;
@@ -130,7 +130,7 @@ public static class JwtHandler
     /// <summary>
     /// Extracts role IDs from JWT token (expects comma-separated values).
     /// </summary>
-    public static IReadOnlyList<int> ExtractRoleIds(string token)
+    public static IReadOnlyList<long> ExtractRoleIds(string token)
     {
         var rolesStr = ExtractClaimValue(token, "RoleIds");
 
@@ -139,7 +139,7 @@ public static class JwtHandler
 
         return [.. rolesStr
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(s => int.TryParse(s, out var id) ? (int?)id : null)
+            .Select(s => long.TryParse(s, out var id) ? (long?)id : null)
             .Where(id => id.HasValue)
             .Select(id => id!.Value)
             .Distinct()];
