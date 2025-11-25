@@ -16,6 +16,16 @@ public static class StorageUtilityHelper
 
     private static readonly FileExtensionContentTypeProvider _contentTypeProvider = new();
 
+    internal enum FolderPathName
+    {
+        UsersImages
+    }
+
+    internal static Dictionary<FolderPathName, string> FolderPathNameDictionary = new()
+    {
+        { FolderPathName.UsersImages , "assets\\users\\images" }
+    };
+
     #region Save
 
     /// <summary>
@@ -89,14 +99,56 @@ public static class StorageUtilityHelper
     /// Returns FileGetResult or null if not found.
     /// Caller must dispose the returned Stream.
     /// </summary>
-    public static async Task<FileGetResult?> GetFileAsync(string rootPath, string pathOrRelativePath, CancellationToken cancellationToken = default)
+    public static async Task<FileGetWithUrlResult?> GetFileAsync(
+    string rootPath,
+    string pathOrRelativeFolder,
+    string fileNameWithExtension,
+    string? baseUrl = null,
+    CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(rootPath)) throw new ArgumentNullException(nameof(rootPath));
-        if (string.IsNullOrWhiteSpace(pathOrRelativePath)) throw new ArgumentNullException(nameof(pathOrRelativePath));
+        Guard.AgainstNull(rootPath, nameof(rootPath));
+        Guard.AgainstNull(fileNameWithExtension, nameof(fileNameWithExtension));
 
-        var candidateFullPath = Path.IsPathRooted(pathOrRelativePath)
-            ? pathOrRelativePath
-            : Path.Combine(rootPath, pathOrRelativePath.TrimStart('/', '\\'));
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var trimmedFolder = string.IsNullOrWhiteSpace(pathOrRelativeFolder) ? string.Empty : pathOrRelativeFolder.Trim();
+        var trimmedFileName = fileNameWithExtension.Trim();
+
+        string candidateFullPath;
+        if (Path.IsPathRooted(trimmedFileName))
+        {
+            candidateFullPath = trimmedFileName;
+        }
+        else
+        {
+            string baseFolder;
+            if (!string.IsNullOrWhiteSpace(trimmedFolder) && Path.IsPathRooted(trimmedFolder))
+                baseFolder = trimmedFolder;
+            else if (!string.IsNullOrWhiteSpace(trimmedFolder))
+                baseFolder = Path.Combine(rootPath, trimmedFolder.TrimStart('/', '\\'));
+            else
+                baseFolder = rootPath;
+
+            if (!string.IsNullOrWhiteSpace(trimmedFolder) &&
+                (trimmedFolder.EndsWith(trimmedFileName, StringComparison.OrdinalIgnoreCase) ||
+                 Path.GetFileName(trimmedFolder).Equals(trimmedFileName, StringComparison.OrdinalIgnoreCase)))
+            {
+                candidateFullPath = Path.Combine(rootPath, trimmedFolder.TrimStart('/', '\\'));
+            }
+            else
+            {
+                candidateFullPath = Path.Combine(baseFolder, trimmedFileName);
+            }
+        }
+
+        try
+        {
+            candidateFullPath = Path.GetFullPath(candidateFullPath);
+        }
+        catch
+        {
+            return null;
+        }
 
         if (!File.Exists(candidateFullPath))
             return null;
@@ -108,24 +160,53 @@ public static class StorageUtilityHelper
         if (!_contentTypeProvider.TryGetContentType(fileInfo.Name, out var contentType))
             contentType = "application/octet-stream";
 
-        return await Task.FromResult(new FileGetResult(
+        string? url = null;
+        if (!string.IsNullOrWhiteSpace(baseUrl))
+        {
+            try
+            {
+                var rootFull = Path.GetFullPath(rootPath);
+                if (candidateFullPath.StartsWith(rootFull, StringComparison.OrdinalIgnoreCase))
+                {
+                    var relative = Path.GetRelativePath(rootFull, candidateFullPath).Replace('\\', '/');
+                    url = $"{baseUrl.TrimEnd('/')}/{relative.TrimStart('/')}";
+                }
+                else
+                {
+                    url = $"{baseUrl.TrimEnd('/')}/{fileInfo.Name}";
+                }
+            }
+            catch
+            {
+                url = null;
+            }
+        }
+
+        return await Task.FromResult(new FileGetWithUrlResult(
             FileName: fileInfo.Name,
             FullPath: candidateFullPath,
             Stream: stream,
             ContentType: contentType,
             Size: fileInfo.Length,
-            Extension: fileInfo.Extension));
+            Extension: fileInfo.Extension,
+            Url: url));
     }
 
     /// <summary>
     /// Search a folder for a file by name without extension and return the first match (case-insensitive).
     /// Useful when DB only stores a name/identifier and extension is saved in DB or not known.
     /// </summary>
-    public static async Task<FileGetResult?> GetFileByNameWithoutExtensionAsync(string rootPath, string relativeFolderPath, string fileNameWithoutExtension, CancellationToken cancellationToken = default)
+    public static async Task<FileGetWithUrlResult?> GetFileByNameWithoutExtensionAsync(
+    string rootPath,
+    string relativeFolderPath,
+    string fileNameWithoutExtension,
+    string? baseUrl = null,
+    CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(rootPath)) throw new ArgumentNullException(nameof(rootPath));
-        if (string.IsNullOrWhiteSpace(relativeFolderPath)) throw new ArgumentNullException(nameof(relativeFolderPath));
-        if (string.IsNullOrWhiteSpace(fileNameWithoutExtension)) throw new ArgumentNullException(nameof(fileNameWithoutExtension));
+        Guard.AgainstNull(rootPath, nameof(rootPath));
+        Guard.AgainstNull(relativeFolderPath, nameof(relativeFolderPath));
+        Guard.AgainstNull(fileNameWithoutExtension, nameof(fileNameWithoutExtension));
+        cancellationToken.ThrowIfCancellationRequested();
 
         var fullFolderPath = Path.Combine(rootPath, relativeFolderPath.TrimStart('/', '\\'));
 
@@ -140,7 +221,8 @@ public static class StorageUtilityHelper
         if (matched == null)
             return null;
 
-        return await GetFileAsync(rootPath, Path.Combine(relativeFolderPath, Path.GetFileName(matched)), cancellationToken);
+        var fileNameWithExtension = Path.GetFileName(matched);
+        return await GetFileAsync(rootPath, relativeFolderPath, fileNameWithExtension, baseUrl, cancellationToken);
     }
 
     /// <summary>
@@ -150,8 +232,8 @@ public static class StorageUtilityHelper
     /// </summary>
     public static Task<IList<FileInfoResult>> GetFilesFromFolderAsync(string rootPath, string relativeFolderPath, string? baseUrl = null, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(rootPath)) throw new ArgumentNullException(nameof(rootPath));
-        if (string.IsNullOrWhiteSpace(relativeFolderPath)) throw new ArgumentNullException(nameof(relativeFolderPath));
+        Guard.AgainstNull(rootPath, nameof(rootPath));
+        Guard.AgainstNull(relativeFolderPath, nameof(relativeFolderPath));
 
         var fullFolderPath = Path.Combine(rootPath, relativeFolderPath.TrimStart('/', '\\'));
 
@@ -190,7 +272,7 @@ public static class StorageUtilityHelper
     public static Task<bool> DeleteFolderAsync(string rootPath, string relativeFolderPath)
     {
         Guard.AgainstNull(rootPath, nameof(rootPath));
-        Guard.AgainstNull(rootPath, nameof(relativeFolderPath));
+        Guard.AgainstNull(relativeFolderPath, nameof(relativeFolderPath));
 
         var fullPath = Path.Combine(rootPath, relativeFolderPath.TrimStart('/', '\\'));
 
@@ -248,15 +330,16 @@ public static class StorageUtilityHelper
         long Size);
 
     /// <summary>
-    /// Result returned when opening a file for reading. Caller must dispose Stream.
+    /// Result returned when opening a file for reading with URL. Caller must dispose Stream.
     /// </summary>
-    public sealed record FileGetResult(
+    public sealed record FileGetWithUrlResult(
         string FileName,
         string FullPath,
         Stream Stream,
         string ContentType,
         long Size,
-        string Extension);
+        string Extension,
+        string? Url);
 
     /// <summary>
     /// Lightweight metadata about files inside a folder (no Stream).
@@ -302,7 +385,7 @@ public sealed class FileExtensionContentTypeProvider
             return false;
 
         if (!ext.StartsWith('.'))
-            ext = "." + ext;
+            ext = '.' + ext;
 
         return _map.TryGetValue(ext, out contentType!);
     }
@@ -313,10 +396,10 @@ public sealed class FileExtensionContentTypeProvider
     /// </summary>
     public bool AddMapping(string extension, string contentType)
     {
-        if (string.IsNullOrWhiteSpace(extension)) throw new ArgumentNullException(nameof(extension));
-        if (string.IsNullOrWhiteSpace(contentType)) throw new ArgumentNullException(nameof(contentType));
+        Guard.AgainstNull(extension, nameof(extension));
+        Guard.AgainstNull(contentType, nameof(contentType));
 
-        var ext = extension.StartsWith(".") ? extension : "." + extension;
+        var ext = extension.StartsWith('.') ? extension : '.' + extension;
         _map[ext] = contentType;
         return true;
     }
@@ -327,8 +410,8 @@ public sealed class FileExtensionContentTypeProvider
     /// </summary>
     public bool RemoveMapping(string extension)
     {
-        if (string.IsNullOrWhiteSpace(extension)) throw new ArgumentNullException(nameof(extension));
-        var ext = extension.StartsWith(".") ? extension : "." + extension;
+        Guard.AgainstNull(extension, nameof(extension));
+        var ext = extension.StartsWith('.') ? extension : '.' + extension;
         return _map.TryRemove(ext, out _);
     }
 

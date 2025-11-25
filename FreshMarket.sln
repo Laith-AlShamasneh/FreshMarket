@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.0.11217.181 d18.0
+VisualStudioVersion = 18.0.11217.181
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreshMarket.Domain", "FreshMarket.Domain\FreshMarket.Domain.csproj", "{A36F6037-BEEF-4125-8B33-512EB7F78ED1}"
 EndProject
@@ -10,6 +10,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreshMarket.Shared", "FreshMarket.Shared\FreshMarket.Shared.csproj", "{A625883B-DCC6-48A0-8E95-BDF426163598}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreshMarket.Application", "FreshMarket.Application\FreshMarket.Application.csproj", "{AE1F55B3-0BBD-4CE2-96E7-65786B2BAC9A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreshMarket.API", "FreshMarket.API\FreshMarket.API.csproj", "{2758C97E-3169-4A53-AF92-A6E3F59690B8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{AE1F55B3-0BBD-4CE2-96E7-65786B2BAC9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AE1F55B3-0BBD-4CE2-96E7-65786B2BAC9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AE1F55B3-0BBD-4CE2-96E7-65786B2BAC9A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2758C97E-3169-4A53-AF92-A6E3F59690B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2758C97E-3169-4A53-AF92-A6E3F59690B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2758C97E-3169-4A53-AF92-A6E3F59690B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2758C97E-3169-4A53-AF92-A6E3F59690B8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

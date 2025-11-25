@@ -1,22 +1,31 @@
-﻿using FreshMarket.Application.Services.Implementations.Specifications;
+﻿using FreshMarket.Application.Helpers;
+using FreshMarket.Application.Services.Implementations.Specifications;
 using FreshMarket.Application.Services.Implementations.UserManagement;
 using FreshMarket.Application.ViewModels.Request.UserManagement;
 using FreshMarket.Application.ViewModels.Response.UserManagement;
 using FreshMarket.Domain.Interfaces;
 using FreshMarket.Shared.Common;
 using FreshMarket.Shared.Helpers;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using static FreshMarket.Application.Helpers.StorageUtilityHelper;
 
 namespace FreshMarket.Application.Services.Interfaces.UserManagement;
 
 internal class AuthService(
     IUnitOfWork unitOfWork,
     ILogger<AuthService> logger,
-    IConfiguration configuration) : IAuthService
+    IConfiguration configuration,
+    IHostingEnvironment hostingEnvironment) : IAuthService
 {
     private readonly IUnitOfWork _unitOfWork = Guard.AgainstNull(unitOfWork);
     private readonly ILogger<AuthService> _logger = Guard.AgainstNull(logger);
+    //private readonly IConfiguration _configuration = Guard.AgainstNull(configuration);
+    private readonly IHostingEnvironment _hostingEnvironment = Guard.AgainstNull(hostingEnvironment);
+
+    private readonly string _baseUrl = Guard.AgainstNullOrWhiteSpace(
+            configuration["Settings:BaseUrl"]);
     private readonly string _jwtSecret = Guard.AgainstNullOrWhiteSpace(
             configuration["Jwt:Secret"],
             "Jwt:Secret configuration is missing");
@@ -94,6 +103,13 @@ internal class AuthService(
                 _logger.LogInformation("User {UserId} logged in successfully", user.UserId);
 
                 await _unitOfWork.SaveChangesAsync(ct);
+
+                var profilePictureFileResult = await StorageUtilityHelper.GetFileAsync(
+                    rootPath: _hostingEnvironment.WebRootPath,
+                    pathOrRelativeFolder: FolderPathNameDictionary.TryGetValue(FolderPathName.UsersImages, out var folder) ? folder : string.Empty,
+                    fileNameWithExtension: user.Person.ProfilePictureUrl ?? string.Empty,
+                    baseUrl: _baseUrl,
+                    cancellationToken: ct);
 
                 var serviceResult = new LoginResponse
                 {
