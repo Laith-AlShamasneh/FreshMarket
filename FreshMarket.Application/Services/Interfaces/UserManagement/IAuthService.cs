@@ -2,7 +2,7 @@
 using FreshMarket.Application.ViewModels.Response.UserManagement;
 using FreshMarket.Shared.Common;
 
-namespace FreshMarket.Application.Services.Implementations.UserManagement;
+namespace FreshMarket.Application.Services.Interfaces.UserManagement;
 
 public interface IAuthService
 {

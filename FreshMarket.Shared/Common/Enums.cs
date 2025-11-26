@@ -60,5 +60,6 @@ public enum MessageType
     InvalidCoupon,
 
     // System
+    InvalidInput,
     SystemProblem
 }

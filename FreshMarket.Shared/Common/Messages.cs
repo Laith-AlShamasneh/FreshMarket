@@ -33,6 +33,7 @@ public static class Messages
         { MessageType.InvalidCoupon, ("القسيمة غير صالحة", "Invalid coupon") },
 
         // System
+        { MessageType.InvalidInput, ("البيانات المدخلة غير صحيحة", "Incorrect input data") },
         { MessageType.SystemProblem, ("مشكلة في النظام", "System error occurred") },
     };
 

@@ -1,6 +1,6 @@
 ﻿using FreshMarket.Application.Helpers;
 using FreshMarket.Application.Services.Implementations.Specifications;
-using FreshMarket.Application.Services.Implementations.UserManagement;
+using FreshMarket.Application.Services.Interfaces.UserManagement;
 using FreshMarket.Application.ViewModels.Request.UserManagement;
 using FreshMarket.Application.ViewModels.Response.UserManagement;
 using FreshMarket.Domain.Interfaces;
@@ -11,7 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using static FreshMarket.Application.Helpers.StorageUtilityHelper;
 
-namespace FreshMarket.Application.Services.Interfaces.UserManagement;
+namespace FreshMarket.Application.Services.Implementations.UserManagement;
 
 internal class AuthService(
     IUnitOfWork unitOfWork,
