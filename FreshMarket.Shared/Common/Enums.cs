@@ -48,6 +48,8 @@ public enum MessageType
     PasswordIncorrect,
     EmailNotFound,
     DontHavePermission,
+    InvalidToken,
+    TokenExpired,
 
     // Order / Payment / Inventory
     OrderPlacedSuccessfully,

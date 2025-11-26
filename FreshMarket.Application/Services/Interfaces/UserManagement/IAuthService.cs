@@ -25,4 +25,9 @@ public interface IAuthService
     Task<ServiceResult<bool>> LogoutAsync(
         int userId,
         CancellationToken ct = default);
+
+    Task<ServiceResult<LoginResponse>> RefreshTokenAsync(
+        RefreshTokenRequest request,
+        Lang lang,
+        CancellationToken ct = default);
 }

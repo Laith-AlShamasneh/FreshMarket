@@ -23,6 +23,10 @@ public class User : Base
     public bool IsEmailConfirmed { get; set; } = false;
     public DateTime? LastLoginAt { get; set; }
 
+    [MaxLength(500)]
+    public string? RefreshToken { get; private set; }
+    public DateTime? RefreshTokenExpiryTime { get; private set; }
+
     // Navigation
     public ICollection<UserRole> UserRoles { get; set; } = [];
     public ICollection<Order> Orders { get; set; } = [];
@@ -31,5 +35,12 @@ public class User : Base
     public void RecordLoginSuccess()
     {
         LastLoginAt = DateTime.UtcNow;
+    }
+
+    // NEW: Domain Logic for Refresh Token
+    public void SetRefreshToken(string token, int daysToExpire)
+    {
+        RefreshToken = token;
+        RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(daysToExpire);
     }
 }

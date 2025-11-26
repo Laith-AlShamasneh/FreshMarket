@@ -9,6 +9,7 @@ using FreshMarket.Shared.Helpers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Security.Claims;
 using static FreshMarket.Application.Helpers.StorageUtilityHelper;
 
 namespace FreshMarket.Application.Services.Implementations.UserManagement;
@@ -35,9 +36,13 @@ internal class AuthService(
     private readonly string _jwtAudience = Guard.AgainstNullOrWhiteSpace(
             configuration["Jwt:Audience"] ?? "FreshMarketClients",
             "Jwt:Audience");
-    private readonly int _accessTokenExpirationDays = int.TryParse(
+    private readonly int _accessTokenExpirationMinutes = int.TryParse(
             configuration["Jwt:AccessTokenExpirationMinutes"],
             out var atExp) ? atExp : 60;
+
+    private readonly int _refreshTokenExpirationDays = int.TryParse(
+            configuration["Jwt:RefreshTokenExpirationDays"],
+            out var rtExp) ? rtExp : 7;
 
     public Task<ServiceResult<bool>> ChangePasswordAsync(int userId, ChangePasswordRequest request, Lang lang, CancellationToken ct = default)
     {
@@ -83,11 +88,9 @@ internal class AuthService(
 
                 var userRoleSpec = UserRoleSpecification.GetByUserId(user.UserId);
                 var userRoles = await _unitOfWork.UserRoleRepository.ListAsync(userRoleSpec, ct);
+                var roleIdsForToken = userRoles.Select(r => r.RoleId).ToArray();
 
-                var roleIdsForToken = userRoles
-                    .Select(r => r.RoleId)
-                    .ToArray();
-
+                // 1. Generate Access Token
                 var accessToken = JwtHandler.GenerateToken(
                     userId: user.UserId,
                     roleIds: roleIdsForToken,
@@ -95,13 +98,16 @@ internal class AuthService(
                     secretKey: _jwtSecret,
                     issuer: _jwtIssuer,
                     audience: _jwtAudience,
-                    expirationDays: _accessTokenExpirationDays);
+                    expirationDays: _accessTokenExpirationMinutes);
 
-                user.LastLoginAt = DateTime.UtcNow;
-                await _unitOfWork.UserRepository.UpdateLastLoginAsync(user.UserId, ct);
+                // 2. Generate Refresh Token
+                var refreshToken = JwtHandler.GenerateRefreshToken();
 
-                _logger.LogInformation("User {UserId} logged in successfully", user.UserId);
-
+                // 3. Save to User Entity (Domain Logic)
+                user.RecordLoginSuccess();
+                user.SetRefreshToken(refreshToken, _refreshTokenExpirationDays);
+                                                                                                                                                          
+                _unitOfWork.UserRepository.Update(user);
                 await _unitOfWork.SaveChangesAsync(ct);
 
                 var profilePictureFileResult = await StorageUtilityHelper.GetFileAsync(
@@ -115,7 +121,7 @@ internal class AuthService(
                 {
                     Username = user.Username ?? string.Empty,
                     FullName = $"{user.Person.FirstName} {user.Person.LastName}",
-                    PersonalImage = user.Person.ProfilePictureUrl,
+                    PersonalImage = profilePictureFileResult?.Url,
                     AccessToken = accessToken,
                 };
 
@@ -125,6 +131,69 @@ internal class AuthService(
             "User login",
             request,
             ct);
+    }
+
+    public async Task<ServiceResult<LoginResponse>> RefreshTokenAsync(RefreshTokenRequest request, Lang lang, CancellationToken ct = default)
+    {
+        return await ExecutionHelper.ExecuteAsync(
+            async () =>
+            {
+                Guard.AgainstNull(request);
+
+                var principal = JwtHandler.GetPrincipalFromExpiredToken(request.AccessToken, _jwtSecret);
+                if (principal == null)
+                {
+                    return ServiceResult<LoginResponse>.Failure(
+                        ErrorCodes.Authentication.TOKEN_INVALID,
+                        Messages.Get(MessageType.InvalidToken));
+                }
+
+                var userIdStr = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!long.TryParse(userIdStr, out var userId))
+                {
+                    return ServiceResult<LoginResponse>.Failure(
+                        ErrorCodes.Authentication.TOKEN_INVALID,
+                        Messages.Get(MessageType.InvalidToken));
+                }
+
+                // 2. Fetch User with Refresh Token
+                var user = await _unitOfWork.UserRepository.GetByIdAsync(userId, ct);
+                if (user == null || user.RefreshToken != request.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+                {
+                    return ServiceResult<LoginResponse>.Failure(
+                        ErrorCodes.Authentication.TOKEN_EXPIRED,
+                        Messages.Get(MessageType.TokenExpired));
+                }
+
+                // 3. Generate New Tokens
+                var userRoleSpec = UserRoleSpecification.GetByUserId(user.UserId);
+                var userRoles = await _unitOfWork.UserRoleRepository.ListAsync(userRoleSpec, ct);
+                var roleIdsForToken = userRoles.Select(r => r.RoleId).ToArray();
+
+                var newAccessToken = JwtHandler.GenerateToken(
+                    userId: user.UserId,
+                    roleIds: roleIdsForToken,
+                    language: lang,
+                    secretKey: _jwtSecret,
+                    issuer: _jwtIssuer,
+                    audience: _jwtAudience,
+                    expirationDays: _accessTokenExpirationMinutes);
+
+                var newRefreshToken = JwtHandler.GenerateRefreshToken();
+
+                // 4. Rotate Refresh Token (Security Best Practice)
+                user.SetRefreshToken(newRefreshToken, _refreshTokenExpirationDays);
+
+                _unitOfWork.UserRepository.Update(user);
+                await _unitOfWork.SaveChangesAsync(ct);
+
+                return ServiceResult<LoginResponse>.Success(new LoginResponse
+                {
+                    AccessToken = newAccessToken,
+                    RefreshToken = newRefreshToken,
+                });
+            },
+            _logger, "Refresh Token", request, ct);
     }
 
     public Task<ServiceResult<bool>> LogoutAsync(int userId, CancellationToken ct = default)

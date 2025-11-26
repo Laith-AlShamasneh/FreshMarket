@@ -23,3 +23,9 @@ public class ChangePasswordRequest
     public string NewPassword { get; set; } = string.Empty;
     public string ConfirmNewPassword { get; set; } = string.Empty;
 }
+
+public class RefreshTokenRequest
+{
+    public string AccessToken { get; set; } = string.Empty;
+    public string RefreshToken { get; set; } = string.Empty;
+}

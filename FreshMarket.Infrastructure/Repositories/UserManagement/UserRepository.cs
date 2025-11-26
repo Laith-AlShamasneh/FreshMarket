@@ -12,27 +12,4 @@ public class UserRepository(
     ILogger<UserRepository> logger)
     : Repository<User>(context, logger), IUser
 {
-    private readonly FreshMarketDbContext _context = context;
-
-    public async Task UpdateLastLoginAsync(long userId, CancellationToken ct = default)
-    {
-        Guard.AgainstNegativeOrZero(userId, nameof(userId));
-
-        await ExecutionHelper.ExecuteAsync(
-            async () =>
-            {
-                var user = await _context.Users
-                    .FirstOrDefaultAsync(u => u.UserId == userId, ct);
-
-                if (user != null)
-                {
-                    user.RecordLoginSuccess();
-                    _context.Users.Update(user);
-                }
-            },
-            logger,
-            "Update User Last Login",
-            new { UserId = userId }
-        );
-    }
 }

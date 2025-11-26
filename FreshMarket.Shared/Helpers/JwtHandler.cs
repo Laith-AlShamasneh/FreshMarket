@@ -1,7 +1,8 @@
 ﻿using FreshMarket.Shared.Common;
-using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
 
 namespace FreshMarket.Shared.Helpers;
 
@@ -57,6 +58,17 @@ public static class JwtHandler
     }
 
     /// <summary>
+    /// Generates a cryptographically secure random string for use as a Refresh Token.
+    /// </summary>
+    public static string GenerateRefreshToken()
+    {
+        var randomNumber = new byte[32];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
+    }
+
+    /// <summary>
     /// Extracts claims from a JWT token string.
     /// Returns a dictionary of claim type-value pairs.
     /// </summary>
@@ -81,6 +93,43 @@ public static class JwtHandler
         catch (Exception ex)
         {
             throw new InvalidOperationException("Failed to extract claims from JWT token.", ex);
+        }
+    }
+
+    /// <summary>
+    /// Extracts the ClaimsPrincipal from an expired token to identify the user.
+    /// Validates the signature but ignores the lifetime (expiration).
+    /// </summary>
+    public static ClaimsPrincipal? GetPrincipalFromExpiredToken(string token, string secretKey)
+    {
+        Guard.AgainstNullOrWhiteSpace(token, nameof(token));
+        Guard.AgainstNullOrWhiteSpace(secretKey, nameof(secretKey));
+
+        var tokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = false,
+            ValidateIssuer = false,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(secretKey)),
+            ValidateLifetime = false
+        };
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        try
+        {
+            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
+
+            if (securityToken is not JwtSecurityToken jwtSecurityToken ||
+                !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+            {
+                throw new SecurityTokenException("Invalid token");
+            }
+
+            return principal;
+        }
+        catch
+        {
+            return null;
         }
     }
 

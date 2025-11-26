@@ -21,6 +21,8 @@ public static class Messages
         { MessageType.InvalidUserLogin, ("اسم المستخدم أو كلمة المرور غير صحيحة", "Invalid username or password") },
         { MessageType.PasswordIncorrect, ("كلمة المرور غير صحيحة", "Incorrect password") },
         { MessageType.EmailNotFound, ("البريد الإلكتروني غير موجود", "Email not found") },
+        { MessageType.InvalidToken, ("رمز وصول غير صالح", "Invalid access token") },
+        { MessageType.TokenExpired, ("رمز التحديث غير صالح أو منتهي الصلاحية", "Invalid or expired refresh token") },
 
         // Order / Payment / Inventory
         { MessageType.OrderPlacedSuccessfully, ("تم إنشاء الطلب بنجاح", "Order placed successfully") },
