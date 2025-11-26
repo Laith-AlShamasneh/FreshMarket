@@ -2,6 +2,7 @@
 using FreshMarket.Application.Services.Implementations.UserManagement;
 using FreshMarket.Application.Services.Interfaces.UserManagement;
 using FreshMarket.Infrastructure;
+using FreshMarket.Shared.Common;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
@@ -20,6 +21,7 @@ public static class ApplicationDI
 
         #region Other Services
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+        services.AddScoped<ResponseHandler>();
         #endregion
 
         services.AddInfrastructure(configuration);

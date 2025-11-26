@@ -16,10 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\FreshMarket.Application\FreshMarket.Application.csproj" />
     <ProjectReference Include="..\FreshMarket.Shared\FreshMarket.Shared.csproj" />
   </ItemGroup>
