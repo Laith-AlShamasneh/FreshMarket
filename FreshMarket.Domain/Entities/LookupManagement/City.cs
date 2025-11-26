@@ -20,7 +20,10 @@ public class City : Base
     [Required, MaxLength(200)]
     public string NameAr { get; set; } = null!;
 
+    [Column(TypeName = "decimal(18,8)")]
     public decimal? Latitude { get; set; }
+
+    [Column(TypeName = "decimal(18,8)")]
     public decimal? Longitude { get; set; }
 
     public ICollection<Address> Addresses { get; set; } = [];

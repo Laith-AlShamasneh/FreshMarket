@@ -17,5 +17,6 @@ public class CartItem : Base
     public long ProductVariantId { get; set; }
     public ProductVariant ProductVariant { get; set; } = null!;
 
+    [Column(TypeName = "decimal(18,2)")]
     public decimal Quantity { get; set; } = 1m;
 }
