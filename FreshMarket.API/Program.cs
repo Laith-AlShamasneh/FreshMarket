@@ -1,8 +1,8 @@
 using FluentValidation.AspNetCore;
 using FreshMarket.API.Middleware;
-using FreshMarket.Infrastructure;
 using FreshMarket.Shared.Common;
 using Microsoft.AspNetCore.Mvc;
+using FreshMarket.Application;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,8 +34,7 @@ builder.Services.AddControllers()
     });
 
 // 1. Register Layers
-builder.Services.AddInfrastructure(builder.Configuration);
-//builder.Services.AddApplication();
+builder.Services.AddApplication(builder.Configuration);
 
 // 2. Register FluentValidation with ASP.NET Core
 builder.Services.AddFluentValidationAutoValidation();

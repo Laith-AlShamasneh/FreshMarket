@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FreshMarket.Domain\FreshMarket.Domain.csproj" />
+    <ProjectReference Include="..\FreshMarket.Infrastructure\FreshMarket.Infrastructure.csproj" />
     <ProjectReference Include="..\FreshMarket.Shared\FreshMarket.Shared.csproj" />
   </ItemGroup>
 

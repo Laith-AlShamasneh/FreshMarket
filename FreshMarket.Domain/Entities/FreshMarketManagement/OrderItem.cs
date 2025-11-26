@@ -17,18 +17,20 @@ public class OrderItem : Base
     public long ProductVariantId { get; set; }
     public ProductVariant ProductVariant { get; set; } = null!;
 
+    // FIX: Add Column Attribute for Precision
+    [Column(TypeName = "decimal(18,2)")]
     public decimal Quantity { get; set; } = 1m;
 
-    [Column(TypeName = "decimal(6,2)")]
+    [Column(TypeName = "decimal(18,2)")]
     public decimal UnitPrice { get; set; } = 0m;
 
-    [Column(TypeName = "decimal(6,2)")]
+    [Column(TypeName = "decimal(18,2)")]
     public decimal DiscountAmount { get; set; } = 0m;
 
-    [Column(TypeName = "decimal(6,2)")]
+    [Column(TypeName = "decimal(18,2)")]
     public decimal TaxAmount { get; set; } = 0m;
 
-    [Column(TypeName = "decimal(6,2)")]
+    [Column(TypeName = "decimal(18,2)")]
     public decimal LineTotal { get; set; } = 0m;
 
     // Snapshot fields
