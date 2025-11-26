@@ -28,7 +28,28 @@ public class Coupon : Base
     public DateTime? EndsAt { get; set; }
 
     public int? UsageLimit { get; set; }  // Total uses allowed
-    public int UsedCount { get; set; } = 0;
+    public int UsedCount { get; private set; } = 0; // Private setter
 
     public ICollection<Order> Orders { get; set; } = [];
+
+    // Domain Logic: Validate if active
+    public bool IsValid()
+    {
+        var now = DateTime.UtcNow;
+        if (!IsActive) return false;
+        if (StartsAt.HasValue && StartsAt > now) return false;
+        if (EndsAt.HasValue && EndsAt < now) return false;
+        if (UsageLimit.HasValue && UsedCount >= UsageLimit) return false;
+
+        return true;
+    }
+
+    // Domain Logic: Record usage
+    public void RecordUsage()
+    {
+        if (UsageLimit.HasValue && UsedCount >= UsageLimit)
+            throw new InvalidOperationException("Coupon usage limit reached.");
+
+        UsedCount++;
+    }
 }

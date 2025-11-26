@@ -75,10 +75,21 @@ public class CouponRepository(
     {
         Guard.AgainstNegativeOrZero(couponId, nameof(couponId));
 
-        var coupon = await _context.Coupons
-            .FirstOrDefaultAsync(c => c.CouponId == couponId, ct) ?? throw new InvalidOperationException($"Coupon not found with id {couponId}");
+        await ExecutionHelper.ExecuteAsync(
+            async () =>
+            {
+                var coupon = await _context.Coupons
+                    .FirstOrDefaultAsync(c => c.CouponId == couponId, ct);
 
-        coupon.UsedCount++;
-        _context.Coupons.Update(coupon);
+                if (coupon != null)
+                {
+                    coupon.RecordUsage();
+                    _context.Coupons.Update(coupon);
+                }
+            },
+            logger,
+            "Increment copoun usage",
+            new { CouponId = couponId }
+        );
     }
 }

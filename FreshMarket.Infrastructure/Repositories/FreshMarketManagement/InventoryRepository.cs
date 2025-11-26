@@ -24,8 +24,8 @@ public class InventoryRepository(
 
         if (inventory == null) return false;
 
-        var available = inventory.Quantity - inventory.ReservedQuantity;
-        return available >= quantity;
+        // Use the Domain property
+        return inventory.AvailableStock >= quantity;
     }
 
     public async Task<int> GetAvailableStockAsync(long productVariantId, CancellationToken ct = default)
@@ -35,51 +35,46 @@ public class InventoryRepository(
         var inventory = await _context.Inventories
             .FirstOrDefaultAsync(i => i.ProductVariantId == productVariantId, ct);
 
-        if (inventory == null) return 0;
-
-        return inventory.Quantity - inventory.ReservedQuantity;
+        // Use the Domain property
+        return inventory?.AvailableStock ?? 0;
     }
 
     public async Task ReserveStockAsync(long productVariantId, int quantity, CancellationToken ct = default)
     {
         Guard.AgainstNegativeOrZero(productVariantId, nameof(productVariantId));
-        Guard.AgainstNegativeOrZero(quantity, nameof(quantity));
 
         var inventory = await _context.Inventories
-            .FirstOrDefaultAsync(i => i.ProductVariantId == productVariantId, ct);
+            .FirstOrDefaultAsync(i => i.ProductVariantId == productVariantId, ct)
+            ?? throw new InvalidOperationException($"Inventory not found for variant {productVariantId}");
 
-        if (inventory == null) throw new InvalidOperationException($"Inventory not found for variant {productVariantId}");
+        inventory.ReserveStock(quantity);
 
-        inventory.ReservedQuantity += quantity;
         _context.Inventories.Update(inventory);
     }
 
     public async Task ReleaseStockAsync(long productVariantId, int quantity, CancellationToken ct = default)
     {
         Guard.AgainstNegativeOrZero(productVariantId, nameof(productVariantId));
-        Guard.AgainstNegativeOrZero(quantity, nameof(quantity));
 
         var inventory = await _context.Inventories
-            .FirstOrDefaultAsync(i => i.ProductVariantId == productVariantId, ct);
+            .FirstOrDefaultAsync(i => i.ProductVariantId == productVariantId, ct)
+            ?? throw new InvalidOperationException($"Inventory not found for variant {productVariantId}");
 
-        if (inventory == null) throw new InvalidOperationException($"Inventory not found for variant {productVariantId}");
+        inventory.ReleaseStock(quantity);
 
-        inventory.ReservedQuantity = Math.Max(0, inventory.ReservedQuantity - quantity);
         _context.Inventories.Update(inventory);
     }
 
     public async Task CommitStockAsync(long productVariantId, int quantity, CancellationToken ct = default)
     {
         Guard.AgainstNegativeOrZero(productVariantId, nameof(productVariantId));
-        Guard.AgainstNegativeOrZero(quantity, nameof(quantity));
 
         var inventory = await _context.Inventories
-            .FirstOrDefaultAsync(i => i.ProductVariantId == productVariantId, ct);
+            .FirstOrDefaultAsync(i => i.ProductVariantId == productVariantId, ct)
+            ?? throw new InvalidOperationException($"Inventory not found for variant {productVariantId}");
 
-        if (inventory == null) throw new InvalidOperationException($"Inventory not found for variant {productVariantId}");
+        inventory.CommitStock(quantity);
 
-        inventory.Quantity -= quantity;
-        inventory.ReservedQuantity = Math.Max(0, inventory.ReservedQuantity - quantity);
         _context.Inventories.Update(inventory);
     }
 }

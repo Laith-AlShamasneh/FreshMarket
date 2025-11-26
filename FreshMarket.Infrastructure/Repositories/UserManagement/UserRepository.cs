@@ -26,7 +26,7 @@ public class UserRepository(
 
                 if (user != null)
                 {
-                    user.LastLoginAt = DateTime.UtcNow;
+                    user.RecordLoginSuccess();
                     _context.Users.Update(user);
                 }
             },
