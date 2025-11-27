@@ -11,8 +11,6 @@ public class ResponseHandler(IUserContext userContext)
         ServiceResult<T> result,
         MessageType successMessage = MessageType.RetrieveSuccessfully,
         MessageType failureMessage = MessageType.SystemProblem,
-        HttpResponseStatus successStatus = HttpResponseStatus.OK,
-        HttpResponseStatus failureStatus = HttpResponseStatus.BadRequest,
         string defaultErrorCode = ErrorCodes.System.UNEXPECTED)
     {
         var lang = _user.Lang;
@@ -23,17 +21,16 @@ public class ResponseHandler(IUserContext userContext)
                 result.Data!,
                 successMessage,
                 lang,
-                successStatus);
+                result.Code);
         }
 
-        // Map error message to an error code if you want smarter logic later
         var errorCode = defaultErrorCode;
 
         return ApiResponse<T>.Fail(
             errorCode,
             failureMessage,
             lang,
-            failureStatus);
+            result.Code);
     }
 
     public async Task<ApiResponse<T>> HandleAsync<T>(

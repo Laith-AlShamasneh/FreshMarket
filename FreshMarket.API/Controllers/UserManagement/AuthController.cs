@@ -14,8 +14,6 @@ public class AuthController(
     IUserContext userContext) : ControllerBase
 {
     [HttpPost("login")]
-    [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<LoginResponse>>> Login(
         [FromBody] LoginRequest request,
         CancellationToken ct)
@@ -32,9 +30,7 @@ public class AuthController(
     }
 
     [HttpPost("refresh-token")]
-    [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<ApiResponse<LoginResponse>>> RefreshToken(
+    public async Task<ApiResponse<LoginResponse>> RefreshToken(
         [FromBody] RefreshTokenRequest request,
         CancellationToken ct)
     {
@@ -42,11 +38,10 @@ public class AuthController(
 
         var response = responseHandler.Handle(
             result,
-            successMessage: MessageType.RetrieveSuccessfully);
+            successMessage: MessageType.RetrieveSuccessfully,
+            failureMessage: MessageType.InvalidToken,
+            defaultErrorCode: ErrorCodes.Authentication.TOKEN_INVALID);
 
-        if (!response.Success)
-            return BadRequest(response);
-
-        return Ok(response);
+        return response;
     }
 }

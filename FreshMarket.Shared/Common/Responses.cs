@@ -2,16 +2,17 @@
 
 public class ServiceResult<T>
 {
+    public HttpResponseStatus Code { get; set; }
     public bool IsSuccess { get; init; }
     public string? ErrorCode { get; init; }
     public string? ErrorMessage { get; init; }
     public T? Data { get; init; }
 
-    public static ServiceResult<T> Success(T data) =>
-        new() { IsSuccess = true, Data = data };
+    public static ServiceResult<T> Success(HttpResponseStatus code, T data) =>
+        new() { Code = code, IsSuccess = true, Data = data };
 
-    public static ServiceResult<T> Failure(string errorCode, string errorMessage) =>
-        new() { IsSuccess = false, ErrorCode = errorCode, ErrorMessage = errorMessage };
+    public static ServiceResult<T> Failure(HttpResponseStatus code, string errorCode, string errorMessage) =>
+        new() { Code = code, IsSuccess = false, ErrorCode = errorCode, ErrorMessage = errorMessage };
 }
 
 public class ApiResponse<T>
@@ -20,8 +21,8 @@ public class ApiResponse<T>
     public bool Success { get; set; }
     public string Message { get; set; } = string.Empty;
     public string? ErrorCode { get; set; }
-    public T? Data { get; set; }
     public Dictionary<string, string>? ValidationErrors { get; set; }
+    public T? Data { get; set; }
 
     public static ApiResponse<T> Ok(
         T data,
