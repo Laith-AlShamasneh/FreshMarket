@@ -13,6 +13,15 @@ public class AuthController(
     ResponseHandler responseHandler,
     IUserContext userContext) : ControllerBase
 {
+    [HttpPost("register")]
+    public async Task<ApiResponse<LoginResponse>> Register(
+        [FromForm] RegisterRequest request,
+        CancellationToken ct)
+    {
+        var result = await authService.RegisterAsync(request, userContext.Lang, ct);
+        return responseHandler.Handle(result);
+    }
+
     [HttpPost("login")]
     public async Task<ApiResponse<LoginResponse>> Login(
         [FromBody] LoginRequest request,

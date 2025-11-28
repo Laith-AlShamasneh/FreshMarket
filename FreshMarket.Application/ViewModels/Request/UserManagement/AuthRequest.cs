@@ -1,4 +1,6 @@
-﻿namespace FreshMarket.Application.ViewModels.Request.UserManagement;
+﻿using Microsoft.AspNetCore.Http;
+
+namespace FreshMarket.Application.ViewModels.Request.UserManagement;
 
 public class LoginRequest
 {
@@ -15,6 +17,7 @@ public class RegisterRequest
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
+    public IFormFile? ProfilePicture { get; set; }
 }
 
 public class ChangePasswordRequest

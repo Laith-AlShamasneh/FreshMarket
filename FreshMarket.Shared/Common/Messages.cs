@@ -23,6 +23,7 @@ public static class Messages
         { MessageType.EmailNotFound, ("البريد الإلكتروني غير موجود", "Email not found") },
         { MessageType.InvalidToken, ("رمز وصول غير صالح", "Invalid access token") },
         { MessageType.TokenExpired, ("رمز التحديث غير صالح أو منتهي الصلاحية", "Invalid or expired refresh token") },
+        { MessageType.EmailAlreadyExists, ("اسم المستخدم أو البريد الإلكتروني قيد الاستخدام بالفعل", "Username or Email is already in use") },
 
         // Order / Payment / Inventory
         { MessageType.OrderPlacedSuccessfully, ("تم إنشاء الطلب بنجاح", "Order placed successfully") },

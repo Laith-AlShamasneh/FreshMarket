@@ -8,7 +8,7 @@ namespace FreshMarket.Application.Helpers;
 /// Utility methods for saving, retrieving and deleting files on disk.
 /// Designed to be used from a shared project (no ASP.NET pipeline types returned).
 /// </summary>
-public static class StorageUtilityHelper
+internal static class StorageUtilityHelper
 {
     private const int LargeFileBufferSize = 1 * 1024 * 1024; // 1 MB
     private const int SmallFileBufferSize = 80 * 1024;       // 80 KB
@@ -32,16 +32,18 @@ public static class StorageUtilityHelper
     /// Save an uploaded file to disk. Returns metadata about saved file.
     /// </summary>
     /// <returns>FileSaveResult containing locations and metadata. Throws exception on failure.</returns>
-    public static async Task<FileSaveResult> SaveFileAsync(
+    internal static async Task<FileSaveResult> SaveFileAsync(
         string rootPath,
         string? relativeFolder,
         IFormFile formFile,
-        string[]? allowedExtensions = null,
+        FileUploadType fileType,
         string? customFileName = null,
         CancellationToken cancellationToken = default)
     {
         Guard.AgainstNull(formFile, nameof(formFile));
         Guard.AgainstNull(rootPath, nameof(rootPath));
+
+        string[] allowedExtensions = GetAllowedExtensions(fileType);
 
         var extension = Path.GetExtension(formFile.FileName).ToLowerInvariant();
         if (allowedExtensions is not null && allowedExtensions.Length > 0)
@@ -99,7 +101,7 @@ public static class StorageUtilityHelper
     /// Returns FileGetResult or null if not found.
     /// Caller must dispose the returned Stream.
     /// </summary>
-    public static async Task<FileGetWithUrlResult?> GetFileAsync(
+    internal static async Task<FileGetWithUrlResult?> GetFileAsync(
     string rootPath,
     string pathOrRelativeFolder,
     string fileNameWithExtension,
@@ -196,7 +198,7 @@ public static class StorageUtilityHelper
     /// Search a folder for a file by name without extension and return the first match (case-insensitive).
     /// Useful when DB only stores a name/identifier and extension is saved in DB or not known.
     /// </summary>
-    public static async Task<FileGetWithUrlResult?> GetFileByNameWithoutExtensionAsync(
+    internal static async Task<FileGetWithUrlResult?> GetFileByNameWithoutExtensionAsync(
     string rootPath,
     string relativeFolderPath,
     string fileNameWithoutExtension,
@@ -230,7 +232,7 @@ public static class StorageUtilityHelper
     /// If baseUrl is provided, Url property on the result will be populated.
     /// Caller can then call GetFileAsync to open streams as needed.
     /// </summary>
-    public static Task<IList<FileInfoResult>> GetFilesFromFolderAsync(string rootPath, string relativeFolderPath, string? baseUrl = null, CancellationToken cancellationToken = default)
+    internal static Task<IList<FileInfoResult>> GetFilesFromFolderAsync(string rootPath, string relativeFolderPath, string? baseUrl = null, CancellationToken cancellationToken = default)
     {
         Guard.AgainstNull(rootPath, nameof(rootPath));
         Guard.AgainstNull(relativeFolderPath, nameof(relativeFolderPath));
@@ -258,7 +260,7 @@ public static class StorageUtilityHelper
 
     #region Delete
 
-    public static Task<bool> DeleteFileAsync(string fullFilePath)
+    internal static Task<bool> DeleteFileAsync(string fullFilePath)
     {
         Guard.AgainstNull(fullFilePath, nameof(fullFilePath));
 
@@ -269,7 +271,7 @@ public static class StorageUtilityHelper
         return Task.FromResult(true);
     }
 
-    public static Task<bool> DeleteFolderAsync(string rootPath, string relativeFolderPath)
+    internal static Task<bool> DeleteFolderAsync(string rootPath, string relativeFolderPath)
     {
         Guard.AgainstNull(rootPath, nameof(rootPath));
         Guard.AgainstNull(relativeFolderPath, nameof(relativeFolderPath));
@@ -313,6 +315,12 @@ public static class StorageUtilityHelper
         return string.Join('/', filtered);
     }
 
+    private static string[] GetAllowedExtensions(FileUploadType type) => type switch
+    {
+        FileUploadType.UserProfileImage => [".png", ".jpg", ".jpeg"],
+        _ => throw new ArgumentOutOfRangeException(nameof(type), $"Unknown file upload type: {type}")
+    };
+
     #endregion
 
     #region DTOs / Results
@@ -320,7 +328,7 @@ public static class StorageUtilityHelper
     /// <summary>
     /// Result returned after saving a file.
     /// </summary>
-    public sealed record FileSaveResult(
+    internal sealed record FileSaveResult(
         string FolderName,
         string FileName,
         string RelativePath,
@@ -332,7 +340,7 @@ public static class StorageUtilityHelper
     /// <summary>
     /// Result returned when opening a file for reading with URL. Caller must dispose Stream.
     /// </summary>
-    public sealed record FileGetWithUrlResult(
+    internal sealed record FileGetWithUrlResult(
         string FileName,
         string FullPath,
         Stream Stream,
@@ -344,7 +352,7 @@ public static class StorageUtilityHelper
     /// <summary>
     /// Lightweight metadata about files inside a folder (no Stream).
     /// </summary>
-    public sealed record FileInfoResult(
+    internal sealed record FileInfoResult(
         string FileName,
         string RelativePath,
         string FullPath,
@@ -360,17 +368,17 @@ public static class StorageUtilityHelper
 /// Provides a mapping of file extensions to MIME/content types and a TryGetContentType API.
 /// Thread-safe and extensible at runtime via AddMapping.
 /// </summary>
-public sealed class FileExtensionContentTypeProvider
+internal sealed class FileExtensionContentTypeProvider
 {
     private readonly ConcurrentDictionary<string, string> _map;
 
-    public FileExtensionContentTypeProvider()
+    internal FileExtensionContentTypeProvider()
     {
         _map = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         InitializeDefaults();
     }
 
-    public bool TryGetContentType(string fileNameOrExtension, out string contentType)
+    internal bool TryGetContentType(string fileNameOrExtension, out string contentType)
     {
         contentType = null!;
 
@@ -394,7 +402,7 @@ public sealed class FileExtensionContentTypeProvider
     /// Add or update a mapping from extension (with or without leading dot) to content type.
     /// Returns true if added or updated.
     /// </summary>
-    public bool AddMapping(string extension, string contentType)
+    internal bool AddMapping(string extension, string contentType)
     {
         Guard.AgainstNull(extension, nameof(extension));
         Guard.AgainstNull(contentType, nameof(contentType));
@@ -408,7 +416,7 @@ public sealed class FileExtensionContentTypeProvider
     /// Remove a mapping for the specified extension (with or without leading dot).
     /// Returns true if removed.
     /// </summary>
-    public bool RemoveMapping(string extension)
+    internal bool RemoveMapping(string extension)
     {
         Guard.AgainstNull(extension, nameof(extension));
         var ext = extension.StartsWith('.') ? extension : '.' + extension;
@@ -418,7 +426,7 @@ public sealed class FileExtensionContentTypeProvider
     /// <summary>
     /// Returns a snapshot of current mappings (read-only).
     /// </summary>
-    public IReadOnlyDictionary<string, string> GetMappings() => new Dictionary<string, string>(_map, StringComparer.OrdinalIgnoreCase);
+    internal IReadOnlyDictionary<string, string> GetMappings() => new Dictionary<string, string>(_map, StringComparer.OrdinalIgnoreCase);
 
     private void InitializeDefaults()
     {

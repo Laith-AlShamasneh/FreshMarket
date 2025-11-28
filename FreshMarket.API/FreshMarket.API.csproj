@@ -20,4 +20,8 @@
     <ProjectReference Include="..\FreshMarket.Shared\FreshMarket.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwRoot\" />
+  </ItemGroup>
+
 </Project>

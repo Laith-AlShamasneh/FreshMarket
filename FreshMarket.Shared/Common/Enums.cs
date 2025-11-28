@@ -18,6 +18,7 @@ public enum HttpResponseStatus
     [Description("Unauthorized")] Unauthorized = 401,
     [Description("Forbidden")] Forbidden = 403,
     [Description("Not Found")] DataNotFound = 404,
+    [Description("Conflict")] Conflict = 409,
     [Description("Internal Server Error")] InternalServerError = 500
 }
 
@@ -50,6 +51,7 @@ public enum MessageType
     DontHavePermission,
     InvalidToken,
     TokenExpired,
+    EmailAlreadyExists,
 
     // Order / Payment / Inventory
     OrderPlacedSuccessfully,
