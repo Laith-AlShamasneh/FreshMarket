@@ -98,7 +98,7 @@ internal class AuthService(
                 await _unitOfWork.UserRepository.AddAsync(user, ct);
                 await _unitOfWork.SaveChangesAsync(ct);
 
-                var authResponse = await GenerateAuthResponseAsync(user, lang, false, ct);
+                var authResponse = await GenerateAuthResponseAsync(user, lang, false, null, ct);
 
                 await transaction.CommitAsync(ct);
 
@@ -127,7 +127,7 @@ internal class AuthService(
 
             if (user is null)
             {
-                _logger.LogWarning("Login failed: User not found '{Username}'", request.Username);
+                _logger.LogWarning("Login attempt with non-existent username: {Username}", request.Username);
                 return ServiceResult<LoginResponse>.Failure(
                     ErrorCodes.Authentication.INVALID_CREDENTIALS,
                     Messages.Get(MessageType.InvalidUserLogin, lang),
@@ -151,8 +151,7 @@ internal class AuthService(
                     HttpResponseStatus.Forbidden);
             }
 
-
-            var authResponse = await GenerateAuthResponseAsync(user, lang, false, ct);
+            var authResponse = await GenerateAuthResponseAsync(user, lang, false, null, ct);
 
             return ServiceResult<LoginResponse>.Success(
                 authResponse,
@@ -186,7 +185,7 @@ internal class AuthService(
                     HttpResponseStatus.Unauthorized);
             }
 
-            var authResponse = await GenerateAuthResponseAsync(user, lang, true, ct);
+            var authResponse = await GenerateAuthResponseAsync(user, lang, true, null, ct);
 
             return ServiceResult<LoginResponse>.Success(
                 authResponse,
@@ -202,7 +201,7 @@ internal class AuthService(
         => throw new NotImplementedException();
 
     #region Private Helpers
-    private async Task<LoginResponse> GenerateAuthResponseAsync(User user, Lang lang, bool isRefreshTokenGenerate, CancellationToken ct)
+    private async Task<LoginResponse> GenerateAuthResponseAsync(User user, Lang lang, bool isRefreshTokenGenerate, string? ipAddress, CancellationToken ct)
     {
         var userRoleSpec = UserRoleSpecification.GetByUserId(user.UserId);
         var userRoles = await _unitOfWork.UserRoleRepository.ListAsync(userRoleSpec, ct);
@@ -222,15 +221,7 @@ internal class AuthService(
         user.RecordLoginSuccess();
         user.SetRefreshToken(refreshToken, _refreshTokenExpirationDays);
 
-        var signInLog = new SignInLog
-        {
-            User = user,
-            AttemptedAt = DateTime.UtcNow,
-            IsSuccessful = true,
-            IpAddress = null
-        };
-
-        await _unitOfWork.SignInLogRepository.AddAsync(signInLog, ct);
+        await _unitOfWork.SignInLogRepository.LogAttemptAsync(user.UserId, ipAddress, true, ct);
         _unitOfWork.UserRepository.Update(user);
         await _unitOfWork.SaveChangesAsync(ct);
 

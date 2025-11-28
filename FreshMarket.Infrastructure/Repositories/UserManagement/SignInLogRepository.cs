@@ -1,6 +1,7 @@
 ﻿using FreshMarket.Domain.Entities.UserManagement;
 using FreshMarket.Domain.Interfaces.Repositories.UserManagement;
 using FreshMarket.Infrastructure.Data;
+using FreshMarket.Infrastructure.Helpers;
 using FreshMarket.Shared.Common;
 using FreshMarket.Shared.Helpers;
 using Microsoft.EntityFrameworkCore;

@@ -19,6 +19,7 @@ public class AuthController(
     IUserContext userContext) : ControllerBase
 {
     [HttpPost("register")]
+    [AllowAnonymous]
     public async Task<ApiResponse<LoginResponse>> Register(
         [FromForm] RegisterRequest request,
         CancellationToken ct)
@@ -28,6 +29,7 @@ public class AuthController(
     }
 
     [HttpPost("login")]
+    [AllowAnonymous]
     public async Task<ApiResponse<LoginResponse>> Login(
         [FromBody] LoginRequest request,
         CancellationToken ct)
