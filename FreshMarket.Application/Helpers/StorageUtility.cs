@@ -1,5 +1,6 @@
 ﻿using FreshMarket.Shared.Helpers;
 using Microsoft.AspNetCore.Http;
+using Microsoft.VisualBasic.FileIO;
 using System.Collections.Concurrent;
 
 namespace FreshMarket.Application.Helpers;
@@ -23,7 +24,7 @@ internal static class StorageUtilityHelper
 
     internal static Dictionary<FolderPathName, string> FolderPathNameDictionary = new()
     {
-        { FolderPathName.UsersImages , "assets\\users\\images" }
+        { FolderPathName.UsersImages , "assets/users/images" }
     };
 
     #region Save
@@ -32,29 +33,48 @@ internal static class StorageUtilityHelper
     /// Save an uploaded file to disk. Returns metadata about saved file.
     /// </summary>
     /// <returns>FileSaveResult containing locations and metadata. Throws exception on failure.</returns>
-    internal static async Task<FileSaveResult> SaveFileAsync(
+    /// <summary>
+    /// Save an uploaded file to disk.
+    /// </summary>
+    /// <param name="createUniqueFolder">If true, creates a GUID subfolder. If false, saves directly to relativeFolder.</param>
+    public static async Task<FileSaveResult> SaveFileAsync(
         string rootPath,
         string? relativeFolder,
         IFormFile formFile,
         FileUploadType fileType,
         string? customFileName = null,
+        bool createUniqueFolder = false,
         CancellationToken cancellationToken = default)
     {
         Guard.AgainstNull(formFile, nameof(formFile));
         Guard.AgainstNull(rootPath, nameof(rootPath));
 
-        string[] allowedExtensions = GetAllowedExtensions(fileType);
+        cancellationToken.ThrowIfCancellationRequested();
 
+        string[] allowedExtensions = GetAllowedExtensions(fileType);
         var extension = Path.GetExtension(formFile.FileName).ToLowerInvariant();
+
         if (allowedExtensions is not null && allowedExtensions.Length > 0)
         {
             if (string.IsNullOrWhiteSpace(extension) || !allowedExtensions.Contains(extension))
                 throw new InvalidOperationException($"File extension '{extension}' is not allowed.");
         }
 
-        var normalizedFolder = NormalizeRelativeFolder(relativeFolder);
-        var folderName = string.IsNullOrWhiteSpace(normalizedFolder) ? string.Empty : normalizedFolder.Trim('/');
-        var targetFolderName = Path.Combine(folderName, Guid.NewGuid().ToString());
+        var folderName = NormalizeRelativeFolder(relativeFolder);
+
+        string targetFolderName;
+        string uniqueFolderName = string.Empty;
+
+        if (createUniqueFolder)
+        {
+            uniqueFolderName = Guid.NewGuid().ToString();
+            targetFolderName = Path.Combine(folderName, uniqueFolderName);
+        }
+        else
+        {
+            targetFolderName = folderName;
+        }
+
         var fullDirectoryPath = Path.Combine(rootPath, targetFolderName);
 
         EnsureDirectoryExists(fullDirectoryPath);
@@ -68,22 +88,21 @@ internal static class StorageUtilityHelper
         var finalFileName = sanitizedBaseName + extension;
         var fullFilePath = Path.Combine(fullDirectoryPath, finalFileName);
 
+        // Write File
         int bufferSize = formFile.Length > LargeFileThreshold ? LargeFileBufferSize : SmallFileBufferSize;
-
         await using (var writeStream = new FileStream(fullFilePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, FileOptions.Asynchronous | FileOptions.SequentialScan))
         {
             await using var readStream = formFile.OpenReadStream();
-
             await readStream.CopyToAsync(writeStream, bufferSize, cancellationToken).ConfigureAwait(false);
         }
 
         if (!_contentTypeProvider.TryGetContentType(finalFileName, out var contentType))
             contentType = "application/octet-stream";
 
-        var relativePath = CombineRelativePathParts(folderName, Path.GetFileName(targetFolderName), finalFileName);
+        var relativePath = Path.Combine(targetFolderName, finalFileName).Replace('\\', '/');
 
         return new FileSaveResult(
-            FolderName: Path.GetFileName(targetFolderName),
+            FolderName: createUniqueFolder ? uniqueFolderName : Path.GetFileName(folderName),
             FileName: finalFileName,
             RelativePath: relativePath,
             FullPath: fullFilePath,
@@ -101,7 +120,7 @@ internal static class StorageUtilityHelper
     /// Returns FileGetResult or null if not found.
     /// Caller must dispose the returned Stream.
     /// </summary>
-    internal static async Task<FileGetWithUrlResult?> GetFileAsync(
+    public static async Task<FileGetWithUrlResult?> GetFileAsync(
     string rootPath,
     string pathOrRelativeFolder,
     string fileNameWithExtension,
@@ -198,7 +217,7 @@ internal static class StorageUtilityHelper
     /// Search a folder for a file by name without extension and return the first match (case-insensitive).
     /// Useful when DB only stores a name/identifier and extension is saved in DB or not known.
     /// </summary>
-    internal static async Task<FileGetWithUrlResult?> GetFileByNameWithoutExtensionAsync(
+    public static async Task<FileGetWithUrlResult?> GetFileByNameWithoutExtensionAsync(
     string rootPath,
     string relativeFolderPath,
     string fileNameWithoutExtension,
@@ -232,7 +251,7 @@ internal static class StorageUtilityHelper
     /// If baseUrl is provided, Url property on the result will be populated.
     /// Caller can then call GetFileAsync to open streams as needed.
     /// </summary>
-    internal static Task<IList<FileInfoResult>> GetFilesFromFolderAsync(string rootPath, string relativeFolderPath, string? baseUrl = null, CancellationToken cancellationToken = default)
+    public static Task<IList<FileInfoResult>> GetFilesFromFolderAsync(string rootPath, string relativeFolderPath, string? baseUrl = null, CancellationToken cancellationToken = default)
     {
         Guard.AgainstNull(rootPath, nameof(rootPath));
         Guard.AgainstNull(relativeFolderPath, nameof(relativeFolderPath));
@@ -247,8 +266,8 @@ internal static class StorageUtilityHelper
             .Select(f =>
             {
                 var fi = new FileInfo(f);
-                var rel = CombineRelativePathParts(relativeFolderPath.Trim('/'), fi.Name);
-                var url = !string.IsNullOrWhiteSpace(baseUrl) ? $"{baseUrl!.TrimEnd('/')}/{rel.Replace('\\', '/')}" : null;
+                var rel = Path.Combine(relativeFolderPath, fi.Name).Replace('\\', '/');
+                var url = !string.IsNullOrWhiteSpace(baseUrl) ? $"{baseUrl!.TrimEnd('/')}/{rel.TrimStart('/')}" : null;
                 return new FileInfoResult(fi.Name, rel, fi.FullName, fi.Length, fi.Extension, url);
             })
             .ToList();
@@ -260,7 +279,7 @@ internal static class StorageUtilityHelper
 
     #region Delete
 
-    internal static Task<bool> DeleteFileAsync(string fullFilePath)
+    public static Task<bool> DeleteFileAsync(string fullFilePath)
     {
         Guard.AgainstNull(fullFilePath, nameof(fullFilePath));
 
@@ -271,7 +290,7 @@ internal static class StorageUtilityHelper
         return Task.FromResult(true);
     }
 
-    internal static Task<bool> DeleteFolderAsync(string rootPath, string relativeFolderPath)
+    public static Task<bool> DeleteFolderAsync(string rootPath, string relativeFolderPath)
     {
         Guard.AgainstNull(rootPath, nameof(rootPath));
         Guard.AgainstNull(relativeFolderPath, nameof(relativeFolderPath));
@@ -298,8 +317,11 @@ internal static class StorageUtilityHelper
     private static string NormalizeRelativeFolder(string? folder)
     {
         if (string.IsNullOrWhiteSpace(folder)) return string.Empty;
-        var normalized = folder.Replace('\\', '/').Trim('/');
-        return normalized;
+
+        return folder
+            .Replace('/', Path.DirectorySeparatorChar)
+            .Replace('\\', Path.DirectorySeparatorChar)
+            .Trim(Path.DirectorySeparatorChar);
     }
 
     private static string SanitizeFileName(string fileName)
@@ -307,12 +329,6 @@ internal static class StorageUtilityHelper
         if (string.IsNullOrWhiteSpace(fileName)) return string.Empty;
         var invalid = Path.GetInvalidFileNameChars();
         return string.Concat(fileName.Where(c => !invalid.Contains(c)));
-    }
-
-    private static string CombineRelativePathParts(params string[] parts)
-    {
-        var filtered = parts.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p.Trim('/', '\\'));
-        return string.Join('/', filtered);
     }
 
     private static string[] GetAllowedExtensions(FileUploadType type) => type switch

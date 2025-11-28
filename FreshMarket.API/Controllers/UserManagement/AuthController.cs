@@ -2,12 +2,17 @@
 using FreshMarket.Application.ViewModels.Request.UserManagement;
 using FreshMarket.Application.ViewModels.Response.UserManagement;
 using FreshMarket.Shared.Common;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net.Mime;
 
 namespace FreshMarket.API.Controllers.UserManagement;
 
 [Route("api/auth")]
 [ApiController]
+[Produces(MediaTypeNames.Application.Json)]
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class AuthController(
     IAuthService authService,
     ResponseHandler responseHandler,

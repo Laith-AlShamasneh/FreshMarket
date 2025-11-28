@@ -24,6 +24,7 @@ public static class Messages
         { MessageType.InvalidToken, ("رمز وصول غير صالح", "Invalid access token") },
         { MessageType.TokenExpired, ("رمز التحديث غير صالح أو منتهي الصلاحية", "Invalid or expired refresh token") },
         { MessageType.EmailAlreadyExists, ("اسم المستخدم أو البريد الإلكتروني قيد الاستخدام بالفعل", "Username or Email is already in use") },
+        { MessageType.AccountLocked, ("الحساب مغلق", "Account locked") },
 
         // Order / Payment / Inventory
         { MessageType.OrderPlacedSuccessfully, ("تم إنشاء الطلب بنجاح", "Order placed successfully") },

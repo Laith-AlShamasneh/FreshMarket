@@ -59,8 +59,13 @@ internal class AuthService(
             try
             {
                 var profilePicture = request.ProfilePicture is not null ? await StorageUtilityHelper.SaveFileAsync(_hostingEnvironment.WebRootPath,
-                    FolderPathNameDictionary.GetValueOrDefault(FolderPathName.UsersImages, string.Empty), request.ProfilePicture, FileUploadType.UserProfileImage,
-                    null, ct) : null;
+                    FolderPathNameDictionary.GetValueOrDefault(FolderPathName.UsersImages,
+                    string.Empty),
+                    request.ProfilePicture,
+                    FileUploadType.UserProfileImage,
+                    null,
+                    false,
+                    ct) : null;
 
                 var person = new Person
                 {
@@ -93,7 +98,7 @@ internal class AuthService(
                 await _unitOfWork.UserRepository.AddAsync(user, ct);
                 await _unitOfWork.SaveChangesAsync(ct);
 
-                var authResponse = await GenerateAuthResponseAsync(user, lang, ct);
+                var authResponse = await GenerateAuthResponseAsync(user, lang, false, ct);
 
                 await transaction.CommitAsync(ct);
 
@@ -142,11 +147,12 @@ internal class AuthService(
             {
                 return ServiceResult<LoginResponse>.Failure(
                     ErrorCodes.Authentication.ACCOUNT_DISABLED,
-                    Messages.Get(MessageType.InvalidUserLogin, lang),
+                    Messages.Get(MessageType.AccountLocked, lang),
                     HttpResponseStatus.Forbidden);
             }
 
-            var authResponse = await GenerateAuthResponseAsync(user, lang, ct);
+
+            var authResponse = await GenerateAuthResponseAsync(user, lang, false, ct);
 
             return ServiceResult<LoginResponse>.Success(
                 authResponse,
@@ -180,7 +186,7 @@ internal class AuthService(
                     HttpResponseStatus.Unauthorized);
             }
 
-            var authResponse = await GenerateAuthResponseAsync(user, lang, ct);
+            var authResponse = await GenerateAuthResponseAsync(user, lang, true, ct);
 
             return ServiceResult<LoginResponse>.Success(
                 authResponse,
@@ -196,7 +202,7 @@ internal class AuthService(
         => throw new NotImplementedException();
 
     #region Private Helpers
-    private async Task<LoginResponse> GenerateAuthResponseAsync(User user, Lang lang, CancellationToken ct)
+    private async Task<LoginResponse> GenerateAuthResponseAsync(User user, Lang lang, bool isRefreshTokenGenerate, CancellationToken ct)
     {
         var userRoleSpec = UserRoleSpecification.GetByUserId(user.UserId);
         var userRoles = await _unitOfWork.UserRoleRepository.ListAsync(userRoleSpec, ct);
@@ -216,21 +222,37 @@ internal class AuthService(
         user.RecordLoginSuccess();
         user.SetRefreshToken(refreshToken, _refreshTokenExpirationDays);
 
+        var signInLog = new SignInLog
+        {
+            User = user,
+            AttemptedAt = DateTime.UtcNow,
+            IsSuccessful = true,
+            IpAddress = null
+        };
+
+        await _unitOfWork.SignInLogRepository.AddAsync(signInLog, ct);
         _unitOfWork.UserRepository.Update(user);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        var profilePictureFileResult = await StorageUtilityHelper.GetFileAsync(
+        string? imageUrl = null;
+
+        if (!isRefreshTokenGenerate)
+        {
+            var profilePictureFileResult = await StorageUtilityHelper.GetFileAsync(
             _hostingEnvironment.WebRootPath,
             FolderPathNameDictionary.GetValueOrDefault(FolderPathName.UsersImages, string.Empty),
             user.Person.ProfilePictureUrl ?? string.Empty,
             _baseUrl,
             ct);
 
+            imageUrl = profilePictureFileResult?.Url;
+        }
+
         return new LoginResponse
         {
             Username = user.Username ?? string.Empty,
             FullName = $"{user.Person.FirstName} {user.Person.LastName}",
-            PersonalImage = profilePictureFileResult?.Url,
+            PersonalImage = imageUrl,
             AccessToken = accessToken,
             RefreshToken = refreshToken
         };

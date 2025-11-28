@@ -56,8 +56,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<UserContextMiddleware>();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseStaticFiles();
 
 app.Run();

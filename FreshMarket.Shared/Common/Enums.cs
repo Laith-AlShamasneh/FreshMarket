@@ -52,6 +52,7 @@ public enum MessageType
     InvalidToken,
     TokenExpired,
     EmailAlreadyExists,
+    AccountLocked,
 
     // Order / Payment / Inventory
     OrderPlacedSuccessfully,
