@@ -12,7 +12,9 @@ builder.Services.AddControllers()
     {
         options.InvalidModelStateResponseFactory = context =>
         {
-            // 1. Get all errors from ModelState
+            var userContext = context.HttpContext.RequestServices.GetRequiredService<IUserContext>();
+            var lang = userContext.Lang;
+
             var errors = context.ModelState
                 .Where(e => e.Value?.Errors.Count > 0)
                 .ToDictionary(
@@ -20,15 +22,14 @@ builder.Services.AddControllers()
                     kvp => kvp.Value!.Errors.First().ErrorMessage
                 );
 
-            // 2. Create your custom response
             var apiResponse = ApiResponse<object>.Fail(
                 ErrorCodes.Validation.INVALID_INPUT,
-                MessageType.InvalidInput,
-                Lang.En,
+                Messages.Get(MessageType.InvalidInput, lang),
                 HttpResponseStatus.BadRequest,
                 errors
             );
 
+            // 4. Return HTTP 400 Bad Request with the custom payload
             return new BadRequestObjectResult(apiResponse);
         };
     });

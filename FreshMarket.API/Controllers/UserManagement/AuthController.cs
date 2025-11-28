@@ -14,19 +14,12 @@ public class AuthController(
     IUserContext userContext) : ControllerBase
 {
     [HttpPost("login")]
-    public async Task<ActionResult<ApiResponse<LoginResponse>>> Login(
+    public async Task<ApiResponse<LoginResponse>> Login(
         [FromBody] LoginRequest request,
         CancellationToken ct)
     {
         var result = await authService.LoginAsync(request, userContext.Lang, ct);
-
-        var response = responseHandler.Handle(
-            result,
-            successMessage: MessageType.UserLoginSuccess,
-            failureMessage: MessageType.InvalidUserLogin,
-            defaultErrorCode: ErrorCodes.Authentication.INVALID_CREDENTIALS);
-
-        return response;
+        return responseHandler.Handle(result);
     }
 
     [HttpPost("refresh-token")]
@@ -36,12 +29,6 @@ public class AuthController(
     {
         var result = await authService.RefreshTokenAsync(request, userContext.Lang, ct);
 
-        var response = responseHandler.Handle(
-            result,
-            successMessage: MessageType.RetrieveSuccessfully,
-            failureMessage: MessageType.InvalidToken,
-            defaultErrorCode: ErrorCodes.Authentication.TOKEN_INVALID);
-
-        return response;
+        return responseHandler.Handle(result);
     }
 }
