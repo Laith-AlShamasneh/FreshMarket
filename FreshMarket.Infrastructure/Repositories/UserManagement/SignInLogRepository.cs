@@ -1,10 +1,6 @@
 ﻿using FreshMarket.Domain.Entities.UserManagement;
 using FreshMarket.Domain.Interfaces.Repositories.UserManagement;
 using FreshMarket.Infrastructure.Data;
-using FreshMarket.Infrastructure.Helpers;
-using FreshMarket.Shared.Common;
-using FreshMarket.Shared.Helpers;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace FreshMarket.Infrastructure.Repositories.UserManagement;
@@ -32,14 +28,6 @@ public class SignInLogRepository(
             AttemptedAt = DateTime.UtcNow
         };
 
-        await ExecutionHelper.ExecuteAsync(
-            async () =>
-            {
-                await _context.SignInLogs.AddAsync(log, ct);
-            },
-            logger,
-            "Log SignIn Attempt",
-            new { UserId = userId, IsSuccessful = isSuccessful }
-        );
+        await _context.SignInLogs.AddAsync(log, ct);
     }
 }

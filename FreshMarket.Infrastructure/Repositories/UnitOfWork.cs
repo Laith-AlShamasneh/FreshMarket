@@ -3,7 +3,6 @@ using FreshMarket.Domain.Interfaces.Repositories.FreshMarketManagement;
 using FreshMarket.Domain.Interfaces.Repositories.LookupManagement;
 using FreshMarket.Domain.Interfaces.Repositories.UserManagement;
 using FreshMarket.Infrastructure.Data;
-using FreshMarket.Infrastructure.Helpers;
 using FreshMarket.Infrastructure.Transactions;
 using FreshMarket.Shared.Helpers;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -101,18 +100,10 @@ public class UnitOfWork : IUnitOfWork
     }
 
     public int SaveChanges()
-        => ExecutionHelper.ExecuteAsync(
-            () => Task.FromResult(_context.SaveChanges()),
-            _logger,
-            "SaveChanges (sync)"
-        ).GetAwaiter().GetResult();
+        =>  Task.FromResult(_context.SaveChanges()).GetAwaiter().GetResult();
 
     public async Task<int> SaveChangesAsync(CancellationToken ct = default)
-        => await ExecutionHelper.ExecuteAsync(
-            () => _context.SaveChangesAsync(ct),
-            _logger,
-            "SaveChanges (async)"
-        );
+        => await _context.SaveChangesAsync(ct);
 
     /// <summary>
     /// Begins a new EF Core transaction and returns an ITransaction wrapper.

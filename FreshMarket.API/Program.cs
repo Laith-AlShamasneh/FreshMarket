@@ -5,92 +5,111 @@ using FreshMarket.Shared.Common;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-builder.Services.AddControllers()
-    .ConfigureApiBehaviorOptions(options =>
-    {
-        options.InvalidModelStateResponseFactory = context =>
+try
+{
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
+
+    builder.Services.AddControllers()
+        .ConfigureApiBehaviorOptions(options =>
         {
-            var userContext = context.HttpContext.RequestServices.GetRequiredService<IUserContext>();
-            var lang = userContext.Lang;
+            options.InvalidModelStateResponseFactory = context =>
+            {
+                var userContext = context.HttpContext.RequestServices.GetRequiredService<IUserContext>();
+                var lang = userContext.Lang;
 
-            var errors = context.ModelState
-                .Where(e => e.Value?.Errors.Count > 0)
-                .ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => kvp.Value!.Errors.First().ErrorMessage
+                var errors = context.ModelState
+                    .Where(e => e.Value?.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value!.Errors.First().ErrorMessage
+                    );
+
+                var apiResponse = ApiResponse<object>.Fail(
+                    ErrorCodes.Validation.INVALID_INPUT,
+                    Messages.Get(MessageType.InvalidInput, lang),
+                    HttpResponseStatus.BadRequest,
+                    errors
                 );
 
-            var apiResponse = ApiResponse<object>.Fail(
-                ErrorCodes.Validation.INVALID_INPUT,
-                Messages.Get(MessageType.InvalidInput, lang),
-                HttpResponseStatus.BadRequest,
-                errors
-            );
+                return new OkObjectResult(apiResponse);
+            };
+        });
 
-            return new BadRequestObjectResult(apiResponse);
+    builder.Services.AddApplication(builder.Configuration);
+    builder.Services.AddFluentValidationAutoValidation();
+    builder.Services.AddFluentValidationClientsideAdapters();
+
+    var jwtSettings = builder.Configuration.GetSection("Jwt");
+    var secretKey = jwtSettings["Secret"] ?? throw new InvalidOperationException("Jwt:Secret is missing.");
+    var key = Encoding.UTF8.GetBytes(secretKey);
+
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidateAudience = true,
+            ValidAudience = jwtSettings["Audience"],
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
         };
     });
 
-// 2. Architecture Layers
-builder.Services.AddApplication(builder.Configuration);
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
 
-// 3. Fluent Validation
-builder.Services.AddFluentValidationAutoValidation();
-builder.Services.AddFluentValidationClientsideAdapters();
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<IUserContext, HttpUserContext>();
 
-// 4. JWT Auth
-var jwtSettings = builder.Configuration.GetSection("Jwt");
-var secretKey = jwtSettings["Secret"] ?? throw new InvalidOperationException("Jwt:Secret is missing in configuration.");
-var key = Encoding.UTF8.GetBytes(secretKey);
+    var app = builder.Build();
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-.AddJwtBearer(options =>
-{
-    options.RequireHttpsMetadata = false;
-    options.SaveToken = true;
-    options.TokenValidationParameters = new TokenValidationParameters
+    app.UseSerilogRequestLogging();
+    if (app.Environment.IsDevelopment())
     {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(key),
-        ValidateIssuer = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidateAudience = true,
-        ValidAudience = jwtSettings["Audience"],
-        ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero
-    };
-});
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "FreshMarket API v1");
+        });
+    }
 
-// 5. Swagger (no security definitions)
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+    app.UseStaticFiles();
+    app.UseHttpsRedirection();
+    app.UseAuthentication();
+    app.UseMiddleware<UserContextMiddleware>();
+    app.UseAuthorization();
 
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<IUserContext, HttpUserContext>();
+    app.MapControllers();
 
-var app = builder.Build();
-
-// 6. Middleware pipeline
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "FreshMarket API v1");
-    });
+    app.Run();
 }
-
-app.UseStaticFiles();
-
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseMiddleware<UserContextMiddleware>();
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

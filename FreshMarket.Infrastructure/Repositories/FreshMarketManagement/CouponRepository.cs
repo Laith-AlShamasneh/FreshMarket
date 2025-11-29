@@ -2,7 +2,6 @@
 using FreshMarket.Domain.Entities.FreshMarketManagement;
 using FreshMarket.Domain.Interfaces.Repositories.FreshMarketManagement;
 using FreshMarket.Infrastructure.Data;
-using FreshMarket.Infrastructure.Helpers;
 using FreshMarket.Shared.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -20,8 +19,7 @@ public class CouponRepository(
     {
         Guard.AgainstNullOrWhiteSpace(code, nameof(code));
 
-        return await ExecutionHelper.ExecuteAsync(
-            () => _context.Coupons
+        return await _context.Coupons
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c =>
                     c.Code == code &&
@@ -29,11 +27,7 @@ public class CouponRepository(
                     c.StartsAt <= DateTime.UtcNow &&
                     (c.EndsAt == null || c.EndsAt >= DateTime.UtcNow) &&
                     (c.UsageLimit == null || c.UsedCount < c.UsageLimit),
-                    ct),
-            logger,
-            "Get Active Coupon by Code",
-            new { Code = code }
-        );
+                    ct);
     }
 
     public async Task<bool> IsCodeUsedByUserAsync(string code, long? userId, CancellationToken ct = default)
@@ -41,17 +35,12 @@ public class CouponRepository(
         Guard.AgainstNullOrWhiteSpace(code, nameof(code));
         if (!userId.HasValue || userId <= 0) return false;
 
-        return await ExecutionHelper.ExecuteAsync(
-            () => _context.Orders
+        return await _context.Orders
                 .AnyAsync(o =>
                     o.CouponCode == code &&
                     o.UserId == userId &&
                     o.OrderStatus == OrderStatus.Delivered,
-                    ct),
-            logger,
-            "Check Coupon Used by User",
-            new { Code = code, UserId = userId }
-        );
+                    ct);
     }
 
     public async Task<bool> IsCodeUsedBySessionAsync(string code, Guid sessionId, CancellationToken ct = default)
@@ -59,38 +48,24 @@ public class CouponRepository(
         Guard.AgainstNullOrWhiteSpace(code, nameof(code));
         Guard.AgainstEmptyGuid(sessionId, nameof(sessionId));
 
-        return await ExecutionHelper.ExecuteAsync(
-            () => _context.OrderItems
+        return await _context.OrderItems
                 .AnyAsync(oi =>
                     oi.Order.CouponCode == code &&
                     oi.SessionId == sessionId &&
                     oi.Order.OrderStatus == OrderStatus.Delivered,
-                    ct),
-            logger,
-            "Check Coupon Used by Session",
-            new { Code = code, SessionId = sessionId }
-        );
+                    ct);
     }
 
     public async Task IncrementUsageAsync(long couponId, CancellationToken ct = default)
     {
         Guard.AgainstNegativeOrZero(couponId, nameof(couponId));
 
-        await ExecutionHelper.ExecuteAsync(
-            async () =>
-            {
-                var coupon = await _context.Coupons
-                    .FirstOrDefaultAsync(c => c.CouponId == couponId, ct);
-
-                if (coupon != null)
-                {
-                    coupon.RecordUsage();
-                    _context.Coupons.Update(coupon);
-                }
-            },
-            logger,
-            "Increment copoun usage",
-            new { CouponId = couponId }
-        );
+        var coupon = await _context.Coupons
+            .FirstOrDefaultAsync(c => c.CouponId == couponId, ct);
+        if (coupon != null)
+        {
+            coupon.RecordUsage();
+            _context.Coupons.Update(coupon);
+        }
     }
 }

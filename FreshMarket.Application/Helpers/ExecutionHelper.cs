@@ -16,9 +16,6 @@ public static class ExecutionHelper
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = 0)
     {
-        ArgumentNullException.ThrowIfNull(logger);
-        ArgumentNullException.ThrowIfNull(action);
-
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -28,7 +25,7 @@ public static class ExecutionHelper
         {
             logger.LogError(
                 ex,
-                "Service Operation failed: {Operation} | Member: {Member} | File: {File} | Line: {Line} | Params: {@Params}",
+                "Failure in {Operation} | Method: {Member} | File: {File} | Line: {Line} | Params: {@Params}",
                 operation, memberName, Path.GetFileName(filePath), lineNumber, parameters);
 
             return ServiceResult<T>.Failure(

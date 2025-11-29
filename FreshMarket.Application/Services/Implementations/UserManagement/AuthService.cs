@@ -98,7 +98,7 @@ internal class AuthService(
                 await _unitOfWork.UserRepository.AddAsync(user, ct);
                 await _unitOfWork.SaveChangesAsync(ct);
 
-                var authResponse = await GenerateAuthResponseAsync(user, lang, false, null, ct);
+                var authResponse = await GenerateLoginResponseAsync(user, lang, false, null, ct);
 
                 await transaction.CommitAsync(ct);
 
@@ -151,7 +151,7 @@ internal class AuthService(
                     HttpResponseStatus.Forbidden);
             }
 
-            var authResponse = await GenerateAuthResponseAsync(user, lang, false, null, ct);
+            var authResponse = await GenerateLoginResponseAsync(user, lang, false, null, ct);
 
             return ServiceResult<LoginResponse>.Success(
                 authResponse,
@@ -185,7 +185,7 @@ internal class AuthService(
                     HttpResponseStatus.Unauthorized);
             }
 
-            var authResponse = await GenerateAuthResponseAsync(user, lang, true, null, ct);
+            var authResponse = await GenerateLoginResponseAsync(user, lang, true, null, ct);
 
             return ServiceResult<LoginResponse>.Success(
                 authResponse,
@@ -201,7 +201,7 @@ internal class AuthService(
         => throw new NotImplementedException();
 
     #region Private Helpers
-    private async Task<LoginResponse> GenerateAuthResponseAsync(User user, Lang lang, bool isRefreshTokenGenerate, string? ipAddress, CancellationToken ct)
+    private async Task<LoginResponse> GenerateLoginResponseAsync(User user, Lang lang, bool isRefreshTokenGenerate, string? ipAddress, CancellationToken ct)
     {
         var userRoleSpec = UserRoleSpecification.GetByUserId(user.UserId);
         var userRoles = await _unitOfWork.UserRoleRepository.ListAsync(userRoleSpec, ct);
